@@ -1,0 +1,79 @@
+'use strict';
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
+
+/** Подписка на событие из main-процесса; возвращает функцию отписки. */
+function on(channel, cb) {
+  const h = (_e, data) => cb(data);
+  ipcRenderer.on(channel, h);
+  return () => ipcRenderer.removeListener(channel, h);
+}
+
+const info = ipcRenderer.sendSync('app:getInfo');
+
+contextBridge.exposeInMainWorld('pp', {
+  platform: process.platform,
+  info,
+
+  url: {
+    audio: (id) => `pp://app/audio/${id}`,
+    cover: (key, thumb) => `pp://app/cover/${key}${thumb ? '?t=1' : ''}`,
+  },
+
+  library: {
+    get: () => ipcRenderer.invoke('lib:get'),
+    rescan: (deep) => ipcRenderer.invoke('lib:rescan', !!deep),
+    pick: () => ipcRenderer.invoke('lib:pick'),
+    addFolders: (paths) => ipcRenderer.invoke('lib:addFolders', paths),
+    removeFolder: (p) => ipcRenderer.invoke('lib:removeFolder', p),
+    toggleFolder: (p, enabled) => ipcRenderer.invoke('lib:toggleFolder', p, enabled),
+    detect: () => ipcRenderer.invoke('lib:detect'),
+    dismiss: (p) => ipcRenderer.invoke('lib:dismiss', p),
+    parseFiles: (files) => ipcRenderer.invoke('lib:parseFiles', files),
+    retainFiles: (ids) => ipcRenderer.invoke('lib:retainFiles', ids),
+    openFiles: () => ipcRenderer.invoke('lib:openFiles'),
+    classifyPaths: (paths) => ipcRenderer.invoke('lib:classifyPaths', paths),
+    onDiff: (cb) => on('lib:diff', cb),
+    onProgress: (cb) => on('lib:progress', cb),
+    onDone: (cb) => on('lib:done', cb),
+    onFolders: (cb) => on('lib:folders', cb),
+    onSuggest: (cb) => on('lib:suggest', cb),
+  },
+
+  playlists: {
+    import: () => ipcRenderer.invoke('playlists:import'),
+    export: (playlist) => ipcRenderer.invoke('playlists:export', playlist),
+  },
+
+  store: {
+    get: (key) => ipcRenderer.invoke('store:get', key),
+    getSync: (key) => ipcRenderer.sendSync('store:getSync', key),
+    set: (key, value) => ipcRenderer.send('store:set', key, value),
+  },
+
+  lyrics: { get: (track) => ipcRenderer.invoke('lyrics:get', track) },
+  artistImage: (name) => ipcRenderer.invoke('artist:image', name),
+
+  win: {
+    minimize: () => ipcRenderer.send('win:minimize'),
+    toggleMaximize: () => ipcRenderer.send('win:toggleMaximize'),
+    close: () => ipcRenderer.send('win:close'),
+    setOverlay: (o) => ipcRenderer.send('win:overlay', o),
+    setAlwaysOnTop: (v) => ipcRenderer.send('win:alwaysOnTop', v),
+    setTitle: (t) => ipcRenderer.send('win:title', t),
+    isMaximized: () => ipcRenderer.invoke('win:isMaximized'),
+    onMaximize: (cb) => on('win:maximized', cb),
+  },
+
+  shell: {
+    showInFolder: (p) => ipcRenderer.send('shell:showInFolder', p),
+    openExternal: (u) => ipcRenderer.send('shell:openExternal', u),
+    openUserData: () => ipcRenderer.send('app:openUserData'),
+  },
+  quit: () => ipcRenderer.send('app:quit'),
+
+  /** Пути перетащенных файлов (в новых Electron File.path убран). */
+  pathsForFiles: (files) => Array.from(files || []).map((f) => webUtils.getPathForFile(f)).filter(Boolean),
+
+  onCommand: (cb) => on('cmd', cb),
+  onOpenFiles: (cb) => on('open-files', cb),
+});

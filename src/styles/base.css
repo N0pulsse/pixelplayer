@@ -1,0 +1,203 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+html { color-scheme: dark; }
+html[data-theme='light'] { color-scheme: light; }
+body {
+  font: 400 14px/20px var(--font);
+  font-optical-sizing: auto;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; text-align: inherit; -webkit-tap-highlight-color: transparent; }
+input { font: inherit; color: inherit; }
+svg { display: block; }
+img { display: block; -webkit-user-drag: none; }
+h1, h2, h3, h4, p { margin: 0; }
+ul { margin: 0; padding: 0; list-style: none; }
+:focus { outline: none; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--md-primary) 70%, transparent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--md-primary) 35%, transparent); }
+input, textarea { user-select: text; }
+
+/* Полосы прокрутки в духе M3 */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--md-on-surface) 22%, transparent) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--md-on-surface) 22%, transparent); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--md-on-surface) 40%, transparent); background-clip: padding-box; border: 2px solid transparent; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+.drag { -webkit-app-region: drag; }
+.nodrag { -webkit-app-region: no-drag; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Иконки Material Symbols (SVG) */
+.icon { flex: 0 0 auto; display: block; fill: currentColor; width: var(--icon, 24px); height: var(--icon, 24px); overflow: visible; pointer-events: none; }
+
+/* «Слой состояния» (hover / focus / pressed) — общий для интерактивных элементов */
+.state { position: relative; isolation: isolate; }
+.state::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; background: currentColor; opacity: 0; pointer-events: none;
+  transition: opacity var(--effects-fast-dur) var(--effects-fast-ease); z-index: 1;
+}
+.state:hover::after { opacity: .08; }
+.state:focus-visible::after { opacity: .1; }
+.state:active::after { opacity: .12; }
+.state[disabled], .state[aria-disabled='true'] { pointer-events: none; opacity: .38; }
+
+/* ───────── Кнопки ───────── */
+.btn {
+  --h: 40px; --px: 24px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: var(--h); padding: 0 var(--px);
+  flex-shrink: 0; min-width: max-content; border-radius: calc(var(--h) / 2); font: 600 14px/20px var(--font); letter-spacing: .01em; white-space: nowrap;
+  transition: border-radius var(--spatial-fast-dur) var(--spatial-fast-ease), background-color var(--effects-dur) ease, color var(--effects-dur) ease, transform var(--spatial-fast-dur) var(--spatial-fast-ease), box-shadow var(--effects-dur) ease;
+}
+.btn.xs { --h: 32px; --px: 12px; font-size: 14px; }
+.btn.s { --h: 40px; --px: 16px; }
+.btn.m { --h: 56px; --px: 24px; font-size: 16px; line-height: 24px; --icon: 24px; }
+.btn.l { --h: 96px; --px: 48px; font-size: 24px; line-height: 32px; --icon: 32px; gap: 12px; }
+.btn.square { border-radius: var(--r-md); }
+.btn.xs.square { border-radius: var(--r-sm); }
+.btn.l.square { border-radius: var(--r-xl); }
+.btn:active { border-radius: var(--r-md); transform: scale(.98); }
+.btn:focus-visible, .ibtn:focus-visible { outline-offset: 4px; }
+.btn:hover:not(:disabled) { box-shadow: 0 3px 10px color-mix(in srgb, var(--md-shadow) 12%, transparent); }
+.btn.text:hover, .btn.outlined:hover { box-shadow: none; }
+.btn:disabled, .ibtn:disabled { cursor: default; }
+.btn.xs:active { border-radius: var(--r-xs); }
+.btn.l:active { border-radius: var(--r-lg); }
+.btn.filled { background: var(--md-primary); color: var(--md-on-primary); }
+.btn.tonal { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+.btn.elevated { background: var(--md-surface-container-low); color: var(--md-primary); box-shadow: 0 1px 3px color-mix(in srgb, var(--md-shadow) 40%, transparent); }
+.btn.outlined { border: 1px solid var(--md-outline-variant); color: var(--md-primary); }
+.btn.text { color: var(--md-primary); --px: 12px; }
+.btn.danger { background: var(--md-error-container); color: var(--md-on-error-container); }
+.btn.on.filled, .btn.toggle.on { border-radius: var(--r-md); }
+.btn.toggle { background: var(--md-surface-container-high); color: var(--md-on-surface-variant); }
+.btn.toggle.on { background: var(--md-primary); color: var(--md-on-primary); }
+.btn.tonal.toggle.on { background: var(--md-secondary); color: var(--md-on-secondary); }
+
+/* ───────── Кнопки-иконки ───────── */
+.ibtn {
+  --s: 48px; width: var(--s); height: var(--s); border-radius: calc(var(--s) / 2); display: inline-grid; place-items: center; flex: none;
+  color: var(--md-on-surface-variant);
+  transition: border-radius var(--spatial-fast-dur) var(--spatial-fast-ease), background-color var(--effects-dur) ease, color var(--effects-dur) ease, transform var(--spatial-fast-dur) var(--spatial-fast-ease);
+}
+.ibtn.xs { --s: 32px; --icon: 20px; }
+.ibtn.s { --s: 40px; }
+.ibtn.m { --s: 48px; }
+.ibtn.l { --s: 56px; --icon: 28px; }
+.ibtn.xl { --s: 72px; --icon: 36px; }
+.ibtn.square { border-radius: var(--r-md); }
+.ibtn:active { border-radius: var(--r-sm); transform: scale(.94); }
+.ibtn.filled { background: var(--md-primary); color: var(--md-on-primary); }
+.ibtn.tonal { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+.ibtn.surface { background: var(--md-surface-container-high); color: var(--md-on-surface-variant); }
+.ibtn.primary { color: var(--md-primary); }
+.ibtn.on { background: var(--md-primary); color: var(--md-on-primary); border-radius: var(--r-md); }
+.ibtn.accent { color: var(--md-primary); }
+
+/* ───────── Чипы-фильтры ───────── */
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; height: 40px; padding: 0 20px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px;
+  font: 600 12px/16px var(--font); letter-spacing: .08em; text-transform: uppercase;
+  background: var(--md-surface-container); color: var(--md-on-surface-variant);
+  transition: background-color var(--effects-dur) ease, color var(--effects-dur) ease, border-radius var(--spatial-fast-dur) var(--spatial-fast-ease), padding var(--spatial-dur) var(--spatial-ease), transform var(--spatial-fast-dur) var(--spatial-fast-ease);
+}
+.chip:active { transform: scale(.96); border-radius: 14px; }
+.chip.on { background: var(--md-primary-container); color: var(--md-on-primary-container); padding: 0 24px; }
+.chip.soft { text-transform: none; letter-spacing: .01em; font-size: 14px; }
+
+/* ───────── Сегментированные / соединённые кнопки ───────── */
+.seg { display: inline-flex; gap: 2px; }
+.seg > button {
+  height: 48px; padding: 0 24px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--md-surface-container-high); color: var(--md-on-surface-variant); font: 560 14px/20px var(--font);
+  border-radius: var(--r-sm);
+  transition: border-radius var(--spatial-fast-dur) var(--spatial-fast-ease), background-color var(--effects-dur) ease, color var(--effects-dur) ease, flex-grow var(--spatial-dur) var(--spatial-ease);
+}
+.seg > button:first-child { border-radius: 24px var(--r-sm) var(--r-sm) 24px; }
+.seg > button:last-child { border-radius: var(--r-sm) 24px 24px var(--r-sm); }
+.seg > button:only-child { border-radius: 24px; }
+.seg > button.on { background: var(--md-primary); color: var(--md-on-primary); border-radius: 24px; }
+.seg > button:active { border-radius: var(--r-sm); }
+
+/* ───────── Переключатель (switch) ───────── */
+.switch { position: relative; width: 52px; height: 32px; border-radius: 16px; flex: none; background: var(--md-surface-container-highest); border: 2px solid var(--md-outline); transition: background-color var(--effects-dur) ease, border-color var(--effects-dur) ease; }
+.switch::before {
+  content: ''; position: absolute; top: 50%; left: 6px; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; background: var(--md-outline);
+  transition: left var(--spatial-dur) var(--spatial-ease), width var(--spatial-fast-dur) var(--spatial-fast-ease), height var(--spatial-fast-dur) var(--spatial-fast-ease), margin-top var(--spatial-fast-dur) var(--spatial-fast-ease), background-color var(--effects-dur) ease;
+}
+.switch .icon { position: absolute; top: 50%; left: 0; --icon: 16px; margin: -8px 0 0 0; color: var(--md-on-primary-container); opacity: 0; transform: translateX(28px) scale(.4); transition: transform var(--spatial-dur) var(--spatial-ease), opacity var(--effects-dur) ease; }
+.switch.on { background: var(--md-primary); border-color: var(--md-primary); }
+.switch.on::before { left: 22px; width: 24px; height: 24px; margin-top: -12px; background: var(--md-on-primary); }
+.switch.on .icon { opacity: 1; transform: translateX(26px) scale(1); }
+.switch:active::before { width: 28px; height: 28px; margin-top: -14px; }
+.switch.on:active::before { left: 20px; }
+
+/* ───────── Слайдер (громкость и т.п.) ───────── */
+.slider { position: relative; height: 44px; display: flex; align-items: center; touch-action: none; cursor: pointer; --track-h: 16px; }
+.slider .tr { position: absolute; left: 0; right: 0; height: var(--track-h); border-radius: var(--r-full); background: var(--md-secondary-container); overflow: hidden; transition: height var(--spatial-fast-dur) var(--spatial-fast-ease); }
+.slider .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--md-primary); border-radius: var(--r-full) var(--r-xs) var(--r-xs) var(--r-full); }
+.slider .th { position: absolute; top: 50%; width: 4px; height: 40px; margin: -20px 0 0 -2px; border-radius: 2px; background: var(--md-primary); transition: width var(--spatial-fast-dur) var(--spatial-fast-ease), margin var(--spatial-fast-dur) var(--spatial-fast-ease); }
+.slider.dragging .th { width: 2px; margin-left: -1px; }
+.slider.sm { --track-h: 10px; height: 32px; }
+.slider.sm .th { height: 28px; margin-top: -14px; }
+.slider:focus-visible { outline-offset: 0; border-radius: 12px; }
+.slider .tip { position: absolute; bottom: 100%; margin-bottom: 4px; transform: translateX(-50%) scale(.6); opacity: 0; transform-origin: bottom center; background: var(--md-inverse-surface); color: var(--md-inverse-on-surface); border-radius: 14px; padding: 4px 10px; font: 560 12px/16px var(--font); transition: transform var(--spatial-fast-dur) var(--spatial-fast-ease), opacity var(--effects-fast-dur) ease; pointer-events: none; white-space: nowrap; }
+.slider.dragging .tip { transform: translateX(-50%) scale(1); opacity: 1; }
+.slider:focus-visible .tip { transform: translateX(-50%) scale(1); opacity: 1; }
+.slider[aria-disabled='true'] { opacity: .38; cursor: default; }
+
+/* ───────── Меню ───────── */
+.scrim { position: fixed; inset: 0; z-index: 900; }
+.menu {
+  position: fixed; z-index: 910; min-width: 220px; max-width: 340px; padding: 8px; border-radius: var(--r-lg-inc);
+  background: var(--md-surface-container); color: var(--md-on-surface);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--md-shadow) 45%, transparent), 0 0 0 1px color-mix(in srgb, var(--md-outline-variant) 60%, transparent);
+  transform-origin: var(--ox, 0) var(--oy, 0);
+  animation: menu-in var(--spatial-fast-dur) var(--spatial-fast-ease) both;
+  max-height: calc(100vh - 24px); overflow-y: auto;
+}
+@keyframes menu-in { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
+.menu .mi {
+  width: 100%; min-height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border-radius: var(--r-md); font: 500 14px/20px var(--font);
+  transition: background-color var(--effects-fast-dur) ease, border-radius var(--spatial-fast-dur) var(--spatial-fast-ease);
+}
+.menu .mi:hover { background: color-mix(in srgb, var(--md-on-surface) 9%, transparent); border-radius: 22px; }
+.menu .mi.danger { color: var(--md-error); }
+.menu .mi .icon { color: var(--md-on-surface-variant); --icon: 22px; }
+.menu .mi.danger .icon { color: var(--md-error); }
+.menu .mi[disabled] { opacity: .4; pointer-events: none; }
+.menu .mi .grow { flex: 1; min-width: 0; }
+.menu .mi .check { color: var(--md-primary); }
+.menu .hr { height: 1px; margin: 6px 8px; background: var(--md-outline-variant); }
+.menu .mh { padding: 8px 14px 4px; color: var(--md-on-surface-variant); font: 560 12px/16px var(--font); letter-spacing: .04em; }
+
+/* ───────── Диалог ───────── */
+.dialog-scrim { position: fixed; inset: 0; z-index: 920; background: color-mix(in srgb, var(--md-scrim) 55%, transparent); display: grid; place-items: center; animation: fade-in var(--effects-dur) ease both; backdrop-filter: blur(2px); }
+.dialog { width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 48px); display: flex; flex-direction: column; border-radius: var(--r-xl); background: var(--md-surface-container-high); padding: 24px; box-shadow: 0 16px 48px color-mix(in srgb, var(--md-shadow) 50%, transparent); animation: dialog-in var(--spatial-dur) var(--spatial-ease) both; }
+.dialog h2 { font: 450 24px/32px var(--font-display); margin-bottom: 12px; }
+.dialog .body { color: var(--md-on-surface-variant); overflow-y: auto; margin: 0 -8px; padding: 0 8px; }
+.dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+.dialog input.field { width: 100%; height: 56px; border-radius: var(--r-md); border: 2px solid var(--md-outline); background: transparent; padding: 0 16px; font: 400 16px/24px var(--font); transition: border-color var(--effects-dur) ease; }
+.dialog input.field:focus { border-color: var(--md-primary); outline: none; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialog-in { from { opacity: 0; transform: scale(.88) translateY(16px); } to { opacity: 1; transform: none; } }
+
+/* ───────── Снекбар ───────── */
+.snacks { position: fixed; z-index: 950; left: 50%; bottom: calc(var(--mini-h) + 40px); transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: min(560px, calc(100vw - 32px)); }
+.snack { pointer-events: auto; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 8px 6px 20px; border-radius: var(--r-lg-inc); background: var(--md-inverse-surface); color: var(--md-inverse-on-surface); font: 450 14px/20px var(--font); box-shadow: 0 6px 22px color-mix(in srgb, var(--md-shadow) 40%, transparent); animation: snack-in var(--spatial-dur) var(--spatial-ease) both; max-width: 100%; }
+.snack .icon { color: var(--md-inverse-primary); }
+.snack .btn { color: var(--md-inverse-primary); }
+@keyframes snack-in { from { opacity: 0; transform: translateY(24px) scale(.9); } to { opacity: 1; transform: none; } }
+
+/* Затухающий вход для списков */
+@keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+.rise { animation: rise var(--spatial-slow-dur) var(--spatial-slow-ease) both; animation-delay: calc(var(--i, 0) * 28ms); }

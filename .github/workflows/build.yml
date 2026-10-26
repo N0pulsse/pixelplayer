@@ -1,0 +1,22 @@
+name: Build Windows portable
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - name: Install audio test tools
+        run: choco install ffmpeg --yes --no-progress
+      - run: npm test
+      - run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PixelPlayer-Windows
+          path: |
+            release/*.exe

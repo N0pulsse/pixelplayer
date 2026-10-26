@@ -1,0 +1,11 @@
+node_modules
+dist
+release
+shots
+PixelPlayer-data/
+test/.pixel-backend-*/
+work/
+qa/
+.env
+.env.*
+*.log

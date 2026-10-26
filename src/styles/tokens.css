@@ -1,0 +1,128 @@
+/* ───────── Шрифты: Google Sans Flex (латиница) + Roboto Flex (кириллица) — оба с открытой лицензией OFL ───────── */
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('../assets/fonts/GoogleSansFlex-latin.woff') format('woff');
+  font-weight: 1 1000;
+  font-stretch: 25% 151%;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-017F, U+2000-206F, U+20AC, U+2116, U+2122, U+2190-2193, U+2212, U+00D7;
+}
+@font-face {
+  font-family: 'Roboto Flex';
+  src: url('../assets/fonts/RobotoFlex-cyrillic.woff') format('woff');
+  font-weight: 100 1000;
+  font-stretch: 25% 151%;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0400-052F, U+2116, U+00AB, U+00BB, U+2013, U+2014, U+2018-201E, U+2022, U+2026;
+}
+
+/* ───────── Цветовые роли: зарегистрированы как <color>, поэтому плавно перетекают при смене обложки ───────── */
+@property --md-primary { syntax: '<color>'; inherits: true; initial-value: #b4c5ff; }
+@property --md-on-primary { syntax: '<color>'; inherits: true; initial-value: #112778; }
+@property --md-primary-container { syntax: '<color>'; inherits: true; initial-value: #2a3e90; }
+@property --md-on-primary-container { syntax: '<color>'; inherits: true; initial-value: #dce1ff; }
+@property --md-secondary { syntax: '<color>'; inherits: true; initial-value: #bfc5ee; }
+@property --md-on-secondary { syntax: '<color>'; inherits: true; initial-value: #292f4f; }
+@property --md-secondary-container { syntax: '<color>'; inherits: true; initial-value: #3f4567; }
+@property --md-on-secondary-container { syntax: '<color>'; inherits: true; initial-value: #dce1ff; }
+@property --md-tertiary { syntax: '<color>'; inherits: true; initial-value: #e5b9e6; }
+@property --md-on-tertiary { syntax: '<color>'; inherits: true; initial-value: #44214a; }
+@property --md-tertiary-container { syntax: '<color>'; inherits: true; initial-value: #5c3862; }
+@property --md-on-tertiary-container { syntax: '<color>'; inherits: true; initial-value: #ffd6fe; }
+@property --md-error { syntax: '<color>'; inherits: true; initial-value: #ffb4ab; }
+@property --md-on-error { syntax: '<color>'; inherits: true; initial-value: #690005; }
+@property --md-error-container { syntax: '<color>'; inherits: true; initial-value: #93000a; }
+@property --md-on-error-container { syntax: '<color>'; inherits: true; initial-value: #ffdad6; }
+@property --md-surface { syntax: '<color>'; inherits: true; initial-value: #11131a; }
+@property --md-on-surface { syntax: '<color>'; inherits: true; initial-value: #e2e2eb; }
+@property --md-surface-variant { syntax: '<color>'; inherits: true; initial-value: #44464f; }
+@property --md-on-surface-variant { syntax: '<color>'; inherits: true; initial-value: #c5c6d0; }
+@property --md-surface-dim { syntax: '<color>'; inherits: true; initial-value: #11131a; }
+@property --md-surface-bright { syntax: '<color>'; inherits: true; initial-value: #373940; }
+@property --md-surface-container-lowest { syntax: '<color>'; inherits: true; initial-value: #0c0e15; }
+@property --md-surface-container-low { syntax: '<color>'; inherits: true; initial-value: #191b22; }
+@property --md-surface-container { syntax: '<color>'; inherits: true; initial-value: #1d1f26; }
+@property --md-surface-container-high { syntax: '<color>'; inherits: true; initial-value: #282a31; }
+@property --md-surface-container-highest { syntax: '<color>'; inherits: true; initial-value: #33353c; }
+@property --md-outline { syntax: '<color>'; inherits: true; initial-value: #8f909a; }
+@property --md-outline-variant { syntax: '<color>'; inherits: true; initial-value: #44464f; }
+@property --md-inverse-surface { syntax: '<color>'; inherits: true; initial-value: #e2e2eb; }
+@property --md-inverse-on-surface { syntax: '<color>'; inherits: true; initial-value: #2f3037; }
+@property --md-inverse-primary { syntax: '<color>'; inherits: true; initial-value: #4258a9; }
+@property --md-scrim { syntax: '<color>'; inherits: true; initial-value: #000000; }
+@property --md-shadow { syntax: '<color>'; inherits: true; initial-value: #000000; }
+
+:root {
+  /* Плавная смена палитры при переходе между треками */
+  transition:
+    --md-primary 900ms ease, --md-on-primary 900ms ease,
+    --md-primary-container 900ms ease, --md-on-primary-container 900ms ease,
+    --md-secondary 900ms ease, --md-on-secondary 900ms ease,
+    --md-secondary-container 900ms ease, --md-on-secondary-container 900ms ease,
+    --md-tertiary 900ms ease, --md-on-tertiary 900ms ease,
+    --md-tertiary-container 900ms ease, --md-on-tertiary-container 900ms ease,
+    --md-surface 900ms ease, --md-on-surface 900ms ease,
+    --md-surface-variant 900ms ease, --md-on-surface-variant 900ms ease,
+    --md-surface-dim 900ms ease, --md-surface-bright 900ms ease,
+    --md-surface-container-lowest 900ms ease, --md-surface-container-low 900ms ease,
+    --md-surface-container 900ms ease, --md-surface-container-high 900ms ease,
+    --md-surface-container-highest 900ms ease,
+    --md-outline 900ms ease, --md-outline-variant 900ms ease,
+    --md-inverse-surface 900ms ease, --md-inverse-on-surface 900ms ease, --md-inverse-primary 900ms ease;
+
+  /* ───── Формы (corner radius scale) ───── */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-lg-inc: 20px;
+  --r-xl: 28px;
+  --r-xl-inc: 32px;
+  --r-xxl: 48px;
+  --r-full: 9999px;
+
+  /* ───── Типографика ───── */
+  --font: 'Google Sans Flex', 'Roboto Flex', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Google Sans Flex', 'Roboto Flex', 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+
+  /* ───── Движение: пружины подставляются из JS (lib/motion.js); здесь — запасные значения ───── */
+  --spatial-fast-ease: cubic-bezier(.3, 1.4, .5, 1);   --spatial-fast-dur: 260ms;
+  --spatial-ease: cubic-bezier(.3, 1.3, .5, 1);        --spatial-dur: 420ms;
+  --spatial-slow-ease: cubic-bezier(.25, 1.2, .5, 1);  --spatial-slow-dur: 620ms;
+  --effects-fast-ease: cubic-bezier(.2, 0, 0, 1);      --effects-fast-dur: 120ms;
+  --effects-ease: cubic-bezier(.2, 0, 0, 1);           --effects-dur: 200ms;
+  --effects-slow-ease: cubic-bezier(.2, 0, 0, 1);      --effects-slow-dur: 340ms;
+
+  --rail-w: 96px;
+  --rail-w-open: 232px;
+  --titlebar-h: 40px;
+  --mini-h: 84px;
+  --pad: clamp(16px, 2.6vw, 40px);
+}
+
+html[data-motion='reduced'] {
+  --spatial-fast-dur: 1ms; --spatial-dur: 1ms; --spatial-slow-dur: 1ms;
+  --effects-fast-dur: 1ms; --effects-dur: 1ms; --effects-slow-dur: 1ms;
+}
+html[data-motion='reduced'] *, html[data-motion='reduced'] *::before, html[data-motion='reduced'] *::after {
+  animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important;
+}
+
+/* ───── Типографическая шкала (M3 Expressive) ───── */
+.t-display-l { font: 560 clamp(52px, 6.4vw, 96px)/1.0 var(--font-display); letter-spacing: -0.02em; font-stretch: 122%; font-variation-settings: 'ROND' 100; }
+.t-display-m { font: 400 45px/52px var(--font-display); font-variation-settings: 'ROND' 100; }
+.t-headline-l { font: 450 32px/40px var(--font-display); font-variation-settings: 'ROND' 100; }
+.t-headline-m { font: 450 28px/36px var(--font-display); font-variation-settings: 'ROND' 100; }
+.t-headline-s { font: 450 24px/32px var(--font-display); }
+.t-title-l { font: 450 22px/28px var(--font); }
+.t-title-m { font: 560 16px/24px var(--font); letter-spacing: .01em; }
+.t-title-s { font: 560 14px/20px var(--font); letter-spacing: .01em; }
+.t-body-l { font: 400 16px/24px var(--font); letter-spacing: .01em; }
+.t-body-m { font: 400 14px/20px var(--font); letter-spacing: .015em; }
+.t-body-s { font: 400 12px/16px var(--font); letter-spacing: .02em; }
+.t-label-l { font: 560 14px/20px var(--font); letter-spacing: .01em; }
+.t-label-m { font: 560 12px/16px var(--font); letter-spacing: .04em; }
+.t-label-s { font: 560 11px/16px var(--font); letter-spacing: .05em; }
+

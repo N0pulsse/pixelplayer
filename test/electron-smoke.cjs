@@ -1,0 +1,112 @@
+'use strict';
+// Runs the real Electron app with isolated data and exercises its rendered controls.
+const { app, dialog } = require('electron');
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const root = path.resolve(__dirname, '..');
+const qa = path.resolve(process.env.PP_QA_DIR || path.join(root, '..', 'qa'));
+fs.mkdirSync(qa, { recursive: true });
+process.env.PORTABLE_EXECUTABLE_DIR = qa;
+const data = path.join(qa, 'PixelPlayer-data', 'data');
+fs.mkdirSync(data, { recursive: true });
+fs.writeFileSync(path.join(data, 'folders.json'), JSON.stringify([{ path: path.join(__dirname, 'media'), enabled: true }]));
+fs.writeFileSync(path.join(data, 'settings.json'), JSON.stringify({ minDuration: 0, onlineLyrics: false, artistImages: false, reduceMotion: true, themeMode: 'dark', variant: 'expressive', volume: 0 }));
+fs.writeFileSync(path.join(data, 'session.json'), 'null');
+fs.writeFileSync(path.join(data, 'user.json'), '{}');
+fs.writeFileSync(path.join(data, 'window.json'), JSON.stringify({ width: 1280, height: 820 }));
+require('../electron/detect').detectMusicFolders = async () => [];
+let openPaths = [path.join(__dirname, 'media', 'a.wav'), path.join(__dirname, 'media', 'b.wav')];
+dialog.showOpenDialog = async () => ({ canceled: false, filePaths: openPaths });
+dialog.showSaveDialog = async () => ({ canceled: false, filePath: path.join(qa, 'Экспорт.m3u8') });
+dialog.showErrorBox = (title, text) => { console.error(title, text); app.exit(1); };
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+const errors = [];
+let win;
+let tested = false;
+const watchdog = setTimeout(() => { console.error('Electron smoke test timed out'); app.exit(1); }, 60000);
+app.on('browser-window-created', (_event, window) => {
+  win = window;
+  window.webContents.on('console-message', (_e, level, message) => { if (level >= 3) errors.push(message); });
+  window.webContents.once('did-finish-load', async () => {
+    if (tested) return;
+    tested = true;
+    const js = (source) => window.webContents.executeJavaScript(source, true);
+    const waitFor = async (source) => { for (let i = 0; i < 100; i++) { if (await js(source)) return; await delay(100); } throw new Error(`Wait failed: ${source}`); };
+    const click = async (selector) => { assert(await js(`!!document.querySelector(${JSON.stringify(selector)})`), selector); await js(`document.querySelector(${JSON.stringify(selector)}).click()`); await delay(150); };
+    const shot = async (name) => { await delay(300); fs.writeFileSync(path.join(qa, name + '.png'), (await window.webContents.capturePage()).toPNG()); };
+    try {
+      await waitFor('!!window.__pp && window.__pp.libStore.get().tracks.length === 3');
+      assert.equal(await js('window.pp.info.portable'), true);
+      assert.match(await js('fetch(new URL("./licenses/THIRD_PARTY_NOTICES.txt",location.href)).then(r=>r.text())'), /GoogleSansFlex-OFL/);
+      await shot('home-dark');
+      // Opening individual audio files uses the native dialog and starts a real audio element.
+      await js('window.dispatchEvent(new KeyboardEvent("keydown", {key:"o",code:"KeyO",ctrlKey:true,bubbles:true}))');
+      await waitFor('window.__pp.engine.el.currentTime > 0.1 && !window.__pp.engine.paused');
+      assert.equal(await js('window.__pp.engine.paused'), false);
+      await click('.mini-exp');
+      await waitFor('!!document.querySelector(".np")');
+      await click('.np-speed');
+      await js('[...document.querySelectorAll(".mi")].find(b=>b.textContent.includes("1.5×")).click()');
+      assert.equal(await js('window.__pp.engine.el.playbackRate'), 1.5);
+      await click('.np-top-actions [aria-label="Очередь"]');
+      assert.equal(await js('document.querySelectorAll(".qrow").length'), 2);
+      await shot('now-playing-dark');
+      await click('.q-save button');
+      await waitFor('!!document.querySelector(".dialog")');
+      await click('.pl-pick-row');
+      await waitFor('!!document.querySelector(".dialog input")');
+      await js('(()=>{const el=document.querySelector(".dialog input");Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(el,"Моя очередь");el.dispatchEvent(new Event("input",{bubbles:true}));})()');
+      await delay(100);
+      await click('.dialog .actions .filled');
+      await click('.np-top [aria-label="Свернуть"]');
+      await click('.rail-bottom button');
+      await waitFor('document.querySelectorAll(".eq-band input").length === 10');
+      await js('[...document.querySelectorAll(".eq-presets button")].find(b=>b.textContent.toLowerCase().includes("бас")).click()');
+      assert.equal(await js('!!window.__pp.engine.effects'), true);
+      assert.equal(await js('window.__pp.engine.eqEnabled'), true);
+      await js('document.querySelector(".equalizer").scrollIntoView({block:"center"})');
+      await shot('equalizer-dark');
+      // Theme toggles apply actual Material color roles.
+      await js('[...document.querySelectorAll(".seg button")].find(b=>b.textContent==="Светлая").click()');
+      await waitFor('document.documentElement.dataset.theme === "light"');
+      await js('document.querySelector(".screen-scroll").scrollTop=0');
+      await shot('settings-light');
+      // Real M3U native import/export: metadata survives outside watched folders.
+      const playlistFile = path.join(qa, 'Импорт.m3u8');
+      fs.writeFileSync(playlistFile, '#EXTM3U\n' + path.join(__dirname, 'media', 'a.wav') + '\n' + path.join(__dirname, 'media', 'c.wav') + '\n');
+      openPaths = [playlistFile];
+      await js('[...document.querySelectorAll("button")].find(b=>b.textContent==="Импорт M3U").click()');
+      await waitFor('document.querySelector(".dhero-title")?.textContent === "Импорт"');
+      assert.equal(await js('document.querySelectorAll(".tracklist .row").length'), 2);
+      await click('.dhero-actions [aria-label="Ещё"]');
+      await js('[...document.querySelectorAll(".mi")].find(b=>b.textContent.includes("Экспорт в M3U8")).click()');
+      await waitFor('[...document.querySelectorAll(".snack")].some(el=>el.textContent.includes("Плейлист сохранён"))');
+      assert.match(fs.readFileSync(path.join(qa, 'Экспорт.m3u8'), 'utf8'), /#EXTM3U/);
+      await click('.tracklist .row-more');
+      await js('[...document.querySelectorAll(".mi")].find(b=>b.textContent.includes("О треке")).click()');
+      assert(await js('document.querySelector(".track-details").textContent.includes("Частота")'));
+      await click('.dialog .actions button');
+      // Minimum supported desktop size retains navigation and playback actions.
+      window.setSize(420, 640);
+      await delay(300);
+      await shot('compact-light');
+      assert.equal(await js('document.querySelectorAll(".bnav-item").length'), 4);
+      await click('.mini-exp');
+      await shot('compact-playing-light');
+      assert(await js('(()=>{const r=document.querySelector(".np-sec").getBoundingClientRect();return r.height>0 && r.bottom<=innerHeight;})()'));
+      assert(await js('[...document.querySelectorAll(".np button .icon")].every(el=>el.getBoundingClientRect().width>0)'));
+      assert.deepEqual(errors.filter((e) => !e.includes('ERR_FILE_NOT_FOUND')), []);
+      fs.writeFileSync(path.join(qa, 'smoke-result.json'), JSON.stringify({ passed: true, tested: ['real audio playback', 'rate', 'queue', 'save queue', 'equalizer', 'theme', 'M3U import/export', 'track info', 'compact navigation'], errors }, null, 2));
+      console.log('Electron smoke: all checks passed');
+      clearTimeout(watchdog);
+      window.close();
+    } catch (error) {
+      console.error(error.stack);
+      console.error('Renderer errors:', errors);
+      await shot('failure').catch(() => {});
+      app.exit(1);
+    }
+  });
+});
+require('../electron/main');
