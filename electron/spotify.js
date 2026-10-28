@@ -9,6 +9,14 @@ const REDIRECT = 'http://127.0.0.1:43827/callback';
 const SCOPES = ['playlist-read-private', 'playlist-read-collaborative', 'user-library-read', 'user-read-playback-state', 'user-read-currently-playing', 'user-modify-playback-state'];
 const id = (value) => typeof value === 'string' && /^[A-Za-z0-9]{22}$/.test(value);
 const clean = (value, max = 300) => String(value || '').slice(0, max);
+function playbackTarget(input = {}) {
+  const valid = (uri, kinds) => typeof uri === 'string' && new RegExp(`^spotify:(${kinds}):[A-Za-z0-9]{22}$`).test(uri);
+  if(input.fallbackUri && !valid(input.fallbackUri,'track'))throw new Error('Некорректный трек Spotify.');
+  if(input.context){if(!valid(input.context,'album|playlist'))throw new Error('Некорректная коллекция.');return input.fallbackUri || input.context;}
+  if(input.uris){if(!Array.isArray(input.uris)||!input.uris.length||input.uris.length>100||input.uris.some(uri=>!valid(uri,'track')))throw new Error('Некорректный список треков.');const index=Number.isInteger(input.position)&&input.position>=0&&input.position<input.uris.length?input.position:0;return input.uris[index];}
+  if(input.fallbackUri)throw new Error('Не задан источник воспроизведения.');
+  return null;
+}
 function image(images) {
   const value = images?.find((x) => x.width >= 160 && x.width <= 640)?.url || images?.[0]?.url;
   try { const u = new URL(value); return u.protocol === 'https:' && ['i.scdn.co', 'mosaic.scdn.co', 'image-cdn-ak.spotifycdn.com', 'image-cdn-fa.spotifycdn.com'].includes(u.hostname) ? u.href : ''; } catch { return ''; }
@@ -24,8 +32,9 @@ function collection(t, type) {
 function page(data, items) { const offset = Number(data.offset) || 0; const limit = Number(data.limit) || 50; return { items: items.filter(Boolean), offset, nextOffset: data.next ? offset + limit : null, total: Number(data.total) || 0 }; }
 
 class Spotify extends EventEmitter {
-  constructor({ store, dir, safeStorage, fetch, openExternal, port = 43827 }) {
-    super(); Object.assign(this, { store, safeStorage, fetch, openExternal, port });
+  constructor({ store, dir, safeStorage, fetch, openExternal, port = 43827, wait = (ms)=>new Promise(resolve=>setTimeout(resolve,ms)) }) {
+    super(); Object.assign(this, { store, safeStorage, fetch, openExternal, port, wait });
+    this.playingRequest = false;
     this.file = path.join(dir, 'spotify-session.bin'); this.session = null; this.pending = null; this.refreshing = null; this.epoch = 0; this.cooldown = 0; this.error = '';
     if (fs.existsSync(this.file)) {
       try { this.session = JSON.parse(safeStorage.decryptString(fs.readFileSync(this.file))); } catch { this.error = 'Войдите в Spotify заново на этом ПК.'; }
@@ -115,7 +124,7 @@ class Spotify extends EventEmitter {
     // Endpoints are constructed only by the methods below, never supplied by renderer or API pagination links.
     if (Date.now() < this.cooldown) throw new Error(`Лимит Spotify. Повторите через ${Math.ceil((this.cooldown - Date.now()) / 1000)} сек.`);
     const epoch = this.epoch; const token = await this.access();
-    let res; try { res = await this.fetch(API + endpoint, { method, redirect: 'error', signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${token}`, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }); } catch { throw new Error('Spotify недоступен. Проверьте интернет.'); }
+    let res; try { res = await this.fetch(API + endpoint, { method, redirect: 'error', cache:'no-store', signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${token}`, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }); } catch { throw new Error('Spotify недоступен. Проверьте интернет.'); }
     if (epoch !== this.epoch) throw new Error('Подключение изменено.');
     if (res.status === 401 && retry) { await this.access(true); return this.request(endpoint, { method, body }, false); }
     if (res.status === 429) { const seconds = Math.min(86400, Math.max(1, Number(res.headers?.get('retry-after')) || 30)); this.cooldown = Date.now() + seconds * 1000; throw new Error(`Spotify ограничил запросы. Повторите через ${seconds} сек.`); }
@@ -149,7 +158,42 @@ class Spotify extends EventEmitter {
   async playback() {
     const data = await this.request('/me/player');
     if (!data) return null;
-    return { track: track(data.item), playing: !!data.is_playing, position: Number(data.progress_ms) || 0, device: { id: clean(data.device?.id, 200), name: clean(data.device?.name), volume: data.device?.volume_percent, restricted: !!data.device?.is_restricted, supportsVolume: data.device?.supports_volume !== false }, shuffle: !!data.shuffle_state, repeat: data.repeat_state, disallows: data.actions?.disallows || {}, at: Date.now() };
+    return { track: track(data.item), contextUri:/^spotify:(album|playlist):[A-Za-z0-9]{22}$/.test(data.context?.uri||'')?data.context.uri:null, playing: !!data.is_playing, position: Number(data.progress_ms) || 0, device: { id: clean(data.device?.id, 200), name: clean(data.device?.name), volume: data.device?.volume_percent, restricted: !!data.device?.is_restricted, supportsVolume: data.device?.supports_volume !== false }, shuffle: !!data.shuffle_state, repeat: data.repeat_state, disallows: data.actions?.disallows || {}, at: Date.now() };
+  }
+  async playWithRecovery(input = {}) {
+    const target = playbackTarget(input);
+    if(this.playingRequest)throw new Error('Дождитесь запуска Spotify.');
+    this.playingRequest=true;const epoch=this.epoch;
+    const unchanged=()=>{if(epoch!==this.epoch)throw new Error('Подключение Spotify изменено.');};
+    const confirm=async(attempts,deviceId)=>{
+      for(let i=0;i<attempts;i++){
+        await this.wait(700);unchanged();
+        const p=await this.playback();unchanged();
+        const matches=!target || (target.startsWith('spotify:track:')?p?.track?.uri===target:p?.contextUri===target);
+        if(p?.playing&&p.track&&matches&&(!deviceId||p.device?.id===deviceId))return p;
+      }
+      return null;
+    };
+    try{
+      let devices=[];let selected;let apiError;let allowNative=!input.deviceId;
+      try{
+        devices=await this.devices();unchanged();
+        selected=input.deviceId?devices.find(d=>d.id===input.deviceId):devices.find(d=>d.active&&!d.restricted)||devices.find(d=>d.type==='Computer'&&!d.restricted)||devices.find(d=>!d.restricted);
+        if(input.deviceId&&!selected)throw new Error('Выбранное устройство Spotify недоступно. Обновите устройства и выберите его снова.');
+        allowNative=!selected||(selected.type==='Computer'&&!selected.restricted);
+        if(selected?.restricted)throw new Error('Spotify не разрешает управление выбранным устройством.');
+        if(selected&&!selected.active){await this.command({action:'transfer',deviceId:selected.id});await this.wait(500);unchanged();}
+        await this.command({...input,action:'play',deviceId:selected?.id});
+        const p=await confirm(3,selected?.id);
+        if(p)return{playback:p,deviceId:p.device.id,recovered:false,opened:false};
+      }catch(error){apiError=error;unchanged();}
+      // Only use the installed client for a requested song on this computer. Never reroute a phone/speaker to the PC.
+      if(!target || !allowNative)throw apiError || new Error('Spotify не подтвердил воспроизведение на выбранном устройстве.');
+      unchanged();
+      try{await this.openExternal(target);}catch{throw new Error('Не удалось открыть установленный Spotify. Запустите Spotify на ПК и повторите.');}
+      let p=null;try{p=await confirm(6,null);}catch{unchanged();}
+      return{playback:p,deviceId:p?.device?.id||null,recovered:true,opened:true};
+    }finally{this.playingRequest=false;}
   }
   async command(input = {}) {
     const device = input.deviceId ? String(input.deviceId) : '';
@@ -180,4 +224,4 @@ class Spotify extends EventEmitter {
     throw new Error('Неизвестная команда Spotify.');
   }
 }
-module.exports = { Spotify, SCOPES, REDIRECT, track, collection, image };
+module.exports = { Spotify, SCOPES, REDIRECT, track, collection, image, playbackTarget };

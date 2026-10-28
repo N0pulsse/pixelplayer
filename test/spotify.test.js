@@ -85,3 +85,40 @@ test('Spotify accepts asynchronous non-JSON playback acknowledgements',async(t)=
   s.persist({accessToken:'access',refreshToken:'refresh',expires:Date.now()+3600000},s.epoch);
   assert.equal(await s.command({action:'pause'}),null);
 });
+
+const uri = 'spotify:track:' + trackId;
+const desktop = {id:'pc',type:'Computer',active:true,restricted:false};
+function recovery(t, {devices=[desktop], succeeds=false, nativeConfirms=true}={}) {
+  let opened=[];let commands=[];let native=false;
+  const {s}=service(t,async()=>{throw new Error('Unexpected network');},async target=>{opened.push(target);native=true;});
+  s.wait=async()=>{};s.devices=async()=>devices;
+  s.command=async input=>{commands.push(input);};
+  s.playback=async()=>({playing:succeeds||(native&&nativeConfirms),track:{uri},device:{id:'pc'}});
+  return {s,opened,commands};
+}
+test('Spotify verifies accepted playback and does not launch native client on success',async t=>{
+  const {s,opened}=recovery(t,{succeeds:true});const result=await s.playWithRecovery({uris:[uri],deviceId:'pc'});
+  assert.equal(result.playback.playing,true);assert.equal(result.recovered,false);assert.deepEqual(opened,[]);
+});
+test('Spotify recovers silent Connect failure using the exact selected native track',async t=>{
+  const {s,opened}=recovery(t);const result=await s.playWithRecovery({context:'spotify:playlist:'+trackId,fallbackUri:uri,position:4,deviceId:'pc'});
+  assert.deepEqual(opened,[uri]);assert.equal(result.recovered,true);assert.equal(result.playback.track.uri,uri);
+});
+test('Spotify reports opened but never fabricates playback confirmation',async t=>{
+  const {s}=recovery(t,{nativeConfirms:false});const result=await s.playWithRecovery({uris:[uri]});
+  assert.equal(result.opened,true);assert.equal(result.playback,null);
+});
+test('Spotify never redirects remote, restricted or missing selected devices to this PC',async t=>{
+  for(const devices of [[{...desktop,type:'Smartphone'}],[{...desktop,restricted:true}],[]]){
+    const {s,opened}=recovery(t,{devices});await assert.rejects(s.playWithRecovery({uris:[uri],deviceId:'pc'}));assert.deepEqual(opened,[]);
+  }
+});
+test('Spotify validates native URI before any side effects and cancels on account change',async t=>{
+  const {s,opened,commands}=recovery(t);
+  await assert.rejects(s.playWithRecovery({uris:['file:///evil.exe']}));assert.deepEqual(commands,[]);assert.deepEqual(opened,[]);
+  s.wait=async()=>{s.epoch++;};await assert.rejects(s.playWithRecovery({uris:[uri]}),/изменено/);assert.deepEqual(opened,[]);
+});
+test('Spotify transfers inactive computer before issuing play',async t=>{
+  const {s,commands}=recovery(t,{devices:[{...desktop,active:false}],succeeds:true});await s.playWithRecovery({uris:[uri]});
+  assert.deepEqual(commands.map(c=>c.action),['transfer','play']);
+});

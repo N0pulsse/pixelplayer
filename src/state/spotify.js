@@ -28,19 +28,13 @@ export async function spotifyCommand(action, extra = {}) {
   const generation = statusGeneration;
   spotify.set({ busy: true, error: '' });
   try {
-    await api.spotify.command({ action, deviceId: spotify.get().deviceId, ...extra });
     if (action === 'play') {
-      let confirmed = null;
-      for (let attempt=0;attempt<3;attempt++) {
-        await new Promise(resolve=>setTimeout(resolve,700));
-        if(generation!==statusGeneration)throw new Error('Подключение Spotify изменено.');
-        const playback=await api.spotify.playback();
-        const expected=extra.uris?.[extra.position || 0];
-        if(playback?.playing&&playback.track&&(!expected||playback.track.uri===expected)&&(!spotify.get().deviceId||playback.device?.id===spotify.get().deviceId)){confirmed=playback;break;}
-      }
-      if(!confirmed)throw new Error('Spotify принял команду, но не подтвердил воспроизведение. Откройте трек в Spotify или выберите другое устройство.');
-      pause(); spotify.set({ active: true, playback:confirmed });
-    }
+      const result=await api.spotify.play({deviceId:spotify.get().deviceId,...extra});
+      if(generation!==statusGeneration)throw new Error('Подключение Spotify изменено.');
+      if(result.playback){pause();spotify.set({active:true,playback:result.playback,deviceId:result.deviceId});if(result.recovered)toast('Воспроизведение восстановлено через Spotify на ПК',{icon:'check'});}
+      else if(result.opened){pause();spotify.set({active:false,error:'Трек открыт в Spotify на ПК. Spotify Connect пока не подтвердил состояние — управляйте музыкой в окне Spotify.'});}
+      else throw new Error('Spotify не подтвердил воспроизведение.');
+    } else await api.spotify.command({ action, deviceId: spotify.get().deviceId, ...extra });
     if (action === 'pause') { const p = spotify.get().playback; if (p) spotify.set({ playback: { ...p, playing: false } }); }
     // Spotify updates playback state asynchronously; one delayed refresh follows each command.
     setTimeout(refreshSpotify, 700); return true;

@@ -62,6 +62,7 @@ contextBridge.exposeInMainWorld('pp', {
     browse: (input) => ipcRenderer.invoke('spotify:browse', input),
     devices: () => ipcRenderer.invoke('spotify:devices'), playback: () => ipcRenderer.invoke('spotify:playback'),
     command: (input) => ipcRenderer.invoke('spotify:command', input),
+    play: (input) => ipcRenderer.invoke('spotify:play', input),
     onStatus: (cb) => on('spotify:status', cb),
   },
   online: {

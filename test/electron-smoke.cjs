@@ -37,6 +37,7 @@ Spotify.prototype.browse = async function(input) { return { items: ['playlists',
 Spotify.prototype.devices = async () => [{id:'qa-device',name:'QA Computer',type:'Computer',active:true,restricted:false,supportsVolume:true,volume:20}];
 Spotify.prototype.playback = async () => spotifyPlayback && { ...spotifyPlayback, at:Date.now() };
 Spotify.prototype.command = async function(input) { spotifyCalls.push(input); if(input.action==='play') spotifyPlayback={track:spotifyTrack,playing:spotifyConfirm,position:0,device:{id:'qa-device',name:'QA Computer',supportsVolume:true,volume:20},shuffle:false,repeat:'off',disallows:{}}; if(input.action==='pause'&&spotifyPlayback) spotifyPlayback.playing=false; return null; };
+Spotify.prototype.playWithRecovery = async function(input) { await this.command({...input,action:'play'}); if(!spotifyConfirm)throw new Error('Spotify не подтвердил воспроизведение.'); return {playback:await this.playback(),deviceId:'qa-device',opened:false,recovered:false}; };
 const agentServer = http.createServer((request, response) => {
   let body = '';
   request.on('data', (chunk) => { body += chunk; });

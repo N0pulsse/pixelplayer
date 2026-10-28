@@ -34,6 +34,7 @@ function registerFeatures({ app, ipcMain, dialog, getWindow, store, library, net
   ipcMain.handle('spotify:devices', () => spotify.devices());
   ipcMain.handle('spotify:playback', () => spotify.playback());
   ipcMain.handle('spotify:command', (_e, input) => spotify.command(input));
+  ipcMain.handle('spotify:play', (_e, input) => spotify.playWithRecovery(input));
   ipcMain.handle('artist:profile', (_event, name, force) => profiles.get(name, { force: !!force, online: store.get('settings', {})?.artistImages !== false, albums: [...new Set(library.getTracks().filter((t) => splitArtistCredit(t.artists?.length ? t.artists : t.artist).some((n) => artistKey(n) === artistKey(name))).map((t) => t.album).filter(Boolean))].slice(0, 8) }));
   ipcMain.handle('ai:config', () => agent.config());
   ipcMain.handle('ai:save', (_event, input) => agent.save(input || {}));

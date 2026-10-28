@@ -26,7 +26,7 @@ const stub = {
   artistProfile: async () => null,
   ai: { config: async () => ({}), save: async () => ({}), generate: async () => { throw new Error('Запустите настольную версию плеера'); } },
   wallpaper: { get: async () => ({ color: null, source: 'Требуется Windows' }), pick: async () => null },
-  spotify: { status: async () => ({}), client: async () => ({}), start: async () => { throw new Error('Запустите настольную версию плеера'); }, cancel: async () => ({}), disconnect: async () => ({}), browse: async () => ({ items: [] }), devices: async () => [], playback: async () => null, command: async () => {}, onStatus: () => noop },
+  spotify: { status: async () => ({}), client: async () => ({}), start: async () => { throw new Error('Запустите настольную версию плеера'); }, cancel: async () => ({}), disconnect: async () => ({}), browse: async () => ({ items: [] }), devices: async () => [], playback: async () => null, play: async () => { throw new Error("Запустите настольную версию плеера"); }, command: async () => {}, onStatus: () => noop },
   win: { minimize: noop, toggleMaximize: noop, close: noop, setOverlay: noop, setAlwaysOnTop: noop, setTitle: noop, isMaximized: async () => false, onMaximize: () => noop },
   shell: { showInFolder: noop, openExternal: noop, openUserData: noop },
   quit: noop,
