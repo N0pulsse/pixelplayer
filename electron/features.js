@@ -4,13 +4,25 @@ const { ArtistProfiles } = require('./artists');
 const { PlaylistAgent } = require('./ai');
 const { WallpaperPalette } = require('./wallpaper');
 const { Spotify } = require('./spotify');
+const { OnlinePlayers } = require('./online');
 const { artistKey, splitArtistCredit } = require('./identity');
-function registerFeatures({ app, ipcMain, dialog, getWindow, store, library, net, nativeImage, safeStorage, shell }) {
+function registerFeatures({ app, ipcMain, dialog, getWindow, store, library, net, nativeImage, safeStorage, shell, BrowserWindow, session }) {
   const fetch = (url, opts = {}) => net.fetch(url, { ...opts, signal: opts.signal || AbortSignal.timeout(10000) });
   const profiles = new ArtistProfiles({ dir: path.join(app.getPath('userData'), 'artists'), fetch, nativeImage });
   const agent = new PlaylistAgent({ store, dir: app.getPath('userData'), fetch, safeStorage });
   const wallpaper = new WallpaperPalette({ nativeImage });
   const spotify = new Spotify({ store, dir: app.getPath('userData'), safeStorage, fetch, openExternal: (url) => shell.openExternal(url) });
+  const online = new OnlinePlayers({ BrowserWindow, session, shell, store, icon:path.join(__dirname,'../build/icon.png'), emit:(status)=>{const w=getWindow();if(w&&!w.isDestroyed())w.webContents.send('online:status',status);} });
+  app.on('browser-window-created',(_e,w)=>{if(w.webContents.getLastWebPreferences().preload===path.join(__dirname,'preload.js'))w.on('closed',()=>online.closeAll());});
+  app.on('before-quit',()=>online.closeAll());
+  ipcMain.handle('online:status',()=>online.status());
+  ipcMain.handle('online:list',()=>online.list());
+  ipcMain.handle('online:save',(_e,input)=>online.save(input));
+  ipcMain.handle('online:remove',(_e,id)=>online.remove(id));
+  ipcMain.handle('online:open',(_e,key,url)=>online.open(key,url));
+  ipcMain.handle('online:external',(_e,key,url)=>online.external(key,url));
+  ipcMain.handle('online:close',(_e,key)=>online.close(key));
+  ipcMain.handle('online:disconnect',(_e,key)=>online.disconnect(key));
   spotify.on('status', (status) => { const win = getWindow(); if (win && !win.isDestroyed()) win.webContents.send('spotify:status', status); });
   app.on('before-quit', () => spotify.cancel());
   ipcMain.handle('spotify:status', () => spotify.status());

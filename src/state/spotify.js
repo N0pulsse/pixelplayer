@@ -25,10 +25,22 @@ export async function refreshDevices() {
 }
 export async function spotifyCommand(action, extra = {}) {
   if (spotify.get().busy) return false;
+  const generation = statusGeneration;
   spotify.set({ busy: true, error: '' });
   try {
     await api.spotify.command({ action, deviceId: spotify.get().deviceId, ...extra });
-    if (action === 'play') { pause(); spotify.set({ active: true }); }
+    if (action === 'play') {
+      let confirmed = null;
+      for (let attempt=0;attempt<3;attempt++) {
+        await new Promise(resolve=>setTimeout(resolve,700));
+        if(generation!==statusGeneration)throw new Error('Подключение Spotify изменено.');
+        const playback=await api.spotify.playback();
+        const expected=extra.uris?.[extra.position || 0];
+        if(playback?.playing&&playback.track&&(!expected||playback.track.uri===expected)&&(!spotify.get().deviceId||playback.device?.id===spotify.get().deviceId)){confirmed=playback;break;}
+      }
+      if(!confirmed)throw new Error('Spotify принял команду, но не подтвердил воспроизведение. Откройте трек в Spotify или выберите другое устройство.');
+      pause(); spotify.set({ active: true, playback:confirmed });
+    }
     if (action === 'pause') { const p = spotify.get().playback; if (p) spotify.set({ playback: { ...p, playing: false } }); }
     // Spotify updates playback state asynchronously; one delayed refresh follows each command.
     setTimeout(refreshSpotify, 700); return true;

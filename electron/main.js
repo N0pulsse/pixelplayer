@@ -1,6 +1,6 @@
 'use strict';
 const {
-  app, BrowserWindow, ipcMain, dialog, protocol, shell, nativeImage, net, Tray, Menu, safeStorage,
+  app, BrowserWindow, ipcMain, dialog, protocol, shell, nativeImage, net, Tray, Menu, safeStorage, session,
 } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -270,7 +270,7 @@ function createTray() {
 /* ───────────────────────── IPC ───────────────────────── */
 
 function registerIpc(firstRun) {
-  registerFeatures({ app, ipcMain, dialog, getWindow: () => win, store, library, net, nativeImage, safeStorage, shell });
+  registerFeatures({ app, ipcMain, dialog, getWindow: () => win, store, library, net, nativeImage, safeStorage, shell, BrowserWindow, session });
   // Библиотека
   ipcMain.handle('lib:get', () => ({
     tracks: library.getTracks(),

@@ -1,6 +1,9 @@
 'use strict';
 // Runs the real Electron app with isolated data and exercises its rendered controls.
-const { app, dialog } = require('electron');
+const { app, dialog, BrowserWindow } = require('electron');
+// Keep QA windows hidden so normal desktop interaction cannot change test navigation.
+BrowserWindow.prototype.show=function(){};
+BrowserWindow.prototype.focus=function(){};
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
@@ -28,11 +31,12 @@ const Spotify = require('../electron/spotify').Spotify;
 const spotifyCalls = [];
 const spotifyTrack = { id:'a'.repeat(22), uri:'spotify:track:'+'a'.repeat(22), title:'Synthetic Spotify Song', artist:'QA Artist', album:'QA Album', duration:120000, playable:true, position:0 };
 let spotifyPlayback = null;
+let spotifyConfirm = true;
 Spotify.prototype.status = () => ({ connected:true, clientId:'0'.repeat(32), encrypted:true, redirectUri:'http://127.0.0.1:43827/callback' });
 Spotify.prototype.browse = async function(input) { return { items: ['playlists','albums'].includes(input.kind) ? [{id:'b'.repeat(22),uri:'spotify:playlist:'+'b'.repeat(22),type:'playlist',name:'QA Spotify Playlist',subtitle:'Synthetic collection'}] : [spotifyTrack], total:1, nextOffset:null }; };
 Spotify.prototype.devices = async () => [{id:'qa-device',name:'QA Computer',type:'Computer',active:true,restricted:false,supportsVolume:true,volume:20}];
 Spotify.prototype.playback = async () => spotifyPlayback && { ...spotifyPlayback, at:Date.now() };
-Spotify.prototype.command = async function(input) { spotifyCalls.push(input); if(input.action==='play') spotifyPlayback={track:spotifyTrack,playing:true,position:0,device:{id:'qa-device',name:'QA Computer',supportsVolume:true,volume:20},shuffle:false,repeat:'off',disallows:{}}; if(input.action==='pause'&&spotifyPlayback) spotifyPlayback.playing=false; return null; };
+Spotify.prototype.command = async function(input) { spotifyCalls.push(input); if(input.action==='play') spotifyPlayback={track:spotifyTrack,playing:spotifyConfirm,position:0,device:{id:'qa-device',name:'QA Computer',supportsVolume:true,volume:20},shuffle:false,repeat:'off',disallows:{}}; if(input.action==='pause'&&spotifyPlayback) spotifyPlayback.playing=false; return null; };
 const agentServer = http.createServer((request, response) => {
   let body = '';
   request.on('data', (chunk) => { body += chunk; });
@@ -51,6 +55,8 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 const errors = [];
 let win;
 let tested = false;
+const originalLoadURL=BrowserWindow.prototype.loadURL;
+BrowserWindow.prototype.loadURL=function(url,...args){if(/^https:\/\/(music\.yandex\.ru|soundcloud\.com)\//.test(url))return originalLoadURL.call(this,'data:text/html;charset=utf-8,'+encodeURIComponent('<html><title>Online service QA</title><body>Isolated online player test</body></html>'));return originalLoadURL.call(this,url,...args);};
 const watchdog = setTimeout(() => { console.error('Electron smoke test timed out'); app.exit(1); }, 90000);
 app.on('browser-window-created', (_event, window) => {
   win = window;
@@ -146,7 +152,23 @@ app.on('browser-window-created', (_event, window) => {
       await waitFor('!!document.querySelector(".artist-banner") && document.querySelector(".artist-about").textContent.includes("Synthetic artist")');
       assert.equal(await js('document.querySelectorAll(".online-album").length'),2);
       await shot('artist-header');
-      await js('[...document.querySelectorAll(".rail-item")].find(b=>b.textContent.includes("Spotify")).click()');
+      await js('[...document.querySelectorAll(".rail-item")].find(b=>b.textContent.includes("Онлайн")).click()');
+      await waitFor('document.querySelectorAll(".service-card").length===3');
+      await shot('online-services');
+      await js('(()=>{const inputs=document.querySelectorAll(".online-bookmark-form input");const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set;setter.call(inputs[0],"QA Yandex Album");inputs[0].dispatchEvent(new Event("input",{bubbles:true}));setter.call(inputs[1],"https://music.yandex.ru/album/123?utm_source=qa");inputs[1].dispatchEvent(new Event("input",{bubbles:true}));})()');
+      await delay(100);await click('.online-bookmark-form button[type=submit]');
+      await waitFor('document.querySelectorAll(".online-bookmark").length===1');
+      assert.equal(await js('window.pp.online.list().then(x=>x[0].url)'),'https://music.yandex.ru/album/123');
+      await click('.service-card[data-service=yandex] .service-actions > .btn');
+      await waitFor('document.querySelector(".service-card[data-service=yandex] .service-status").textContent==="Окно открыто"');
+      const remote=BrowserWindow.getAllWindows().find(w=>w!==window);assert(remote);
+      assert.equal(remote.webContents.getLastWebPreferences().preload,undefined);assert.equal(remote.webContents.getLastWebPreferences().sandbox,true);assert.equal(remote.webContents.getLastWebPreferences().nodeIntegration,false);
+      assert.equal(await remote.webContents.executeJavaScript('typeof window.pp'), 'undefined');
+      await js('window.pp.online.close("yandex")');
+      window.setSize(420,640);await delay(300);await shot('online-compact');
+      assert(await js('document.querySelector(".online-screen").scrollWidth<=innerWidth'));
+      window.setSize(1280,820);await delay(200);
+      await click('.service-card[data-service=spotify] .service-actions > .btn');
       await waitFor('document.querySelectorAll(".sp-card").length === 1');
       await shot('spotify-library');
       await click('.sp-card');
@@ -163,6 +185,10 @@ app.on('browser-window-created', (_event, window) => {
       await js('window.__pp.engine.play()');
       await waitFor('!document.querySelector(".sp-mini")');
       assert.equal(spotifyCalls[spotifyCalls.length-1].action,'pause');
+      spotifyConfirm=false;await click('.sp-track-play');
+      await waitFor('document.querySelector(".agent-error")?.textContent.includes("не подтвердил")');
+      assert.equal(await js('window.__pp.engine.paused'),false);
+      assert.equal(await js('!!document.querySelector(".sp-mini")'),false);
       await js('[...document.querySelectorAll(".bnav-item")].find(b=>b.textContent.includes("Библиотека")).click()');
       // Minimum supported desktop size retains navigation and playback actions.
       window.setSize(420, 640);
@@ -174,7 +200,7 @@ app.on('browser-window-created', (_event, window) => {
       assert(await js('(()=>{const r=document.querySelector(".np-sec").getBoundingClientRect();return r.height>0 && r.bottom<=innerHeight;})()'));
       assert(await js('[...document.querySelectorAll(".np button .icon")].every(el=>el.getBoundingClientRect().width>0)'));
       assert.deepEqual(errors.filter((e) => !e.includes('ERR_FILE_NOT_FOUND')), []);
-      fs.writeFileSync(path.join(qa, 'smoke-result.json'), JSON.stringify({ passed: true, tested: ['real audio playback', 'rate', 'queue', 'save queue', 'equalizer', 'theme', 'M3U import/export', 'track info', 'compact navigation', '11 themes', 'wallpaper adapter', 'local HTTP playlist agent', 'artist profile'], errors }, null, 2));
+      fs.writeFileSync(path.join(qa, 'smoke-result.json'), JSON.stringify({ passed: true, tested: ['real audio playback', 'rate', 'queue', 'save queue', 'equalizer', 'theme', 'M3U import/export', 'track info', 'compact navigation', '11 themes', 'wallpaper adapter', 'local HTTP playlist agent', 'artist profile', 'online service hub', 'online bookmark persistence', 'isolated service renderer', 'Spotify playback confirmation and failure'], errors }, null, 2));
       console.log('Electron smoke: all checks passed');
       clearTimeout(watchdog);
       agentServer.close();

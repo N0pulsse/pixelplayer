@@ -17,7 +17,7 @@ export const NAV = [
   { id: 'home', label: 'Главная', icon: 'home', route: { name: 'home' } },
   { id: 'search', label: 'Поиск', icon: 'search', route: { name: 'search' } },
   { id: 'library', label: 'Библиотека', icon: 'library_music', route: { name: 'library' } },
-  { id: 'spotify', label: 'Spotify', icon: 'graphic_eq', route: { name: 'spotify' } },
+  { id: 'online', label: 'Онлайн', icon: 'graphic_eq', route: { name: 'online' } },
   { id: 'assistant', label: 'Агент', icon: 'auto_awesome', route: { name: 'assistant' } },
 ];
 

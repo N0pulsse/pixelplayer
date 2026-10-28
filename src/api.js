@@ -4,6 +4,7 @@
  */
 const noop = () => {};
 const stub = {
+  online: { status:async()=>[],list:async()=>[],save:async()=>{throw new Error('Запустите настольную версию');},remove:async()=>[],open:async()=>{throw new Error('Запустите настольную версию');},external:async()=>{},close:async()=>[],disconnect:async()=>[],onStatus:()=>noop },
   platform: 'web',
   info: { version: 'web', userData: '' },
   url: { audio: (id) => `/audio/${id}`, cover: (key) => `/cover/${key}` },

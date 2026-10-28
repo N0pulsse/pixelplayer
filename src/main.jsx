@@ -5,6 +5,7 @@ import './styles/app.css';
 import './styles/features.css';
 import './styles/expansion.css';
 import './styles/spotify.css';
+import './styles/online.css';
 import { App } from './App';
 import { initTheme } from './state/theme';
 import { loadUser } from './state/userdata';

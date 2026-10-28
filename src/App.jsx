@@ -12,6 +12,7 @@ import { Search } from './screens/Search';
 import { Settings } from './screens/Settings';
 import { Assistant } from './screens/Assistant';
 import { SpotifyScreen, SpotifyMini } from './screens/Spotify';
+import { Online } from './screens/Online';
 import { spotify, spotifyCommand, spotifyPosition } from './state/spotify';
 import { NowPlaying } from './screens/NowPlaying';
 import { AlbumScreen, ArtistScreen, GenreScreen, FolderScreen, FavoritesScreen, HistoryScreen, PlaylistScreen } from './screens/Detail';
@@ -28,6 +29,7 @@ function renderRoute(r) {
     case 'settings': return <Settings />;
     case 'assistant': return <Assistant />;
     case 'spotify': return <SpotifyScreen />;
+    case 'online': return <Online />;
     case 'album': return <AlbumScreen id={r.id} />;
     case 'artist': return <ArtistScreen id={r.id} />;
     case 'genre': return <GenreScreen id={r.id} />;

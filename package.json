@@ -1,7 +1,7 @@
 {
   "name": "pixelplayer",
   "productName": "Pixel Player",
-  "version": "1.3.0",
+  "version": "1.5.0",
   "description": "Музыкальный плеер для Windows в стиле Material 3 Expressive: автопоиск музыки, динамические цвета из обложек, тексты песен, анимации",
   "author": "Pixel Player",
   "license": "MIT",

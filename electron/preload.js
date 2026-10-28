@@ -64,6 +64,13 @@ contextBridge.exposeInMainWorld('pp', {
     command: (input) => ipcRenderer.invoke('spotify:command', input),
     onStatus: (cb) => on('spotify:status', cb),
   },
+  online: {
+    status:()=>ipcRenderer.invoke('online:status'), list:()=>ipcRenderer.invoke('online:list'),
+    save:(input)=>ipcRenderer.invoke('online:save',input), remove:(id)=>ipcRenderer.invoke('online:remove',id),
+    open:(key,url)=>ipcRenderer.invoke('online:open',key,url), external:(key,url)=>ipcRenderer.invoke('online:external',key,url),
+    close:(key)=>ipcRenderer.invoke('online:close',key), disconnect:(key)=>ipcRenderer.invoke('online:disconnect',key),
+    onStatus:(cb)=>on('online:status',cb),
+  },
   artistImage: (name) => ipcRenderer.invoke('artist:image', name),
 
   win: {
