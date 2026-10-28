@@ -56,6 +56,8 @@ async function readTags(file, { covers = true } = {}) {
       artist: artistStr,
       artists: c.artists && c.artists.length ? c.artists.map(fixMojibake) : splitArtists(artistStr),
       albumArtist: fixMojibake(c.albumartist) || null,
+      compilation: !!c.compilation,
+      musicbrainzAlbumId: c.musicbrainz_albumid || null,
       album: fixMojibake(c.album) || null,
       year: c.year || (c.date ? parseInt(String(c.date).slice(0, 4), 10) || null : null),
       genre: c.genre && c.genre.length ? fixMojibake(c.genre[0]) : null,

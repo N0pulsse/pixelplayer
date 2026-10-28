@@ -3,6 +3,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/app.css';
 import './styles/features.css';
+import './styles/expansion.css';
 import { App } from './App';
 import { initTheme } from './state/theme';
 import { loadUser } from './state/userdata';

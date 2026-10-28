@@ -1,6 +1,6 @@
 import { createStore, useStore } from '../lib/store';
 
-export const ROOTS = ['home', 'search', 'library', 'settings'];
+export const ROOTS = ['home', 'search', 'library', 'settings', 'assistant'];
 
 export const nav = createStore({ stack: [{ name: 'home' }], dir: 1, tick: 0 });
 
@@ -23,6 +23,7 @@ export const canGoBack = () => nav.get().stack.length > 1;
 
 /** К какому разделу навигации относится экран */
 export function rootOf(route) {
+  if (route.name === 'assistant') return 'assistant';
   if (route.name === 'home') return 'home';
   if (route.name === 'search') return 'search';
   if (route.name === 'settings') return 'settings';

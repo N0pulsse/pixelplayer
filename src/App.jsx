@@ -10,6 +10,7 @@ import { Home } from './screens/Home';
 import { Library } from './screens/Library';
 import { Search } from './screens/Search';
 import { Settings } from './screens/Settings';
+import { Assistant } from './screens/Assistant';
 import { NowPlaying } from './screens/NowPlaying';
 import { AlbumScreen, ArtistScreen, GenreScreen, FolderScreen, FavoritesScreen, HistoryScreen, PlaylistScreen } from './screens/Detail';
 import { api } from './api';
@@ -23,6 +24,7 @@ function renderRoute(r) {
     case 'library': return <Library />;
     case 'search': return <Search />;
     case 'settings': return <Settings />;
+    case 'assistant': return <Assistant />;
     case 'album': return <AlbumScreen id={r.id} />;
     case 'artist': return <ArtistScreen id={r.id} />;
     case 'genre': return <GenreScreen id={r.id} />;

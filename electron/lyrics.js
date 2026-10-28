@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
+const { artistKey, cleanTitle, splitArtistCredit } = require('./identity');
 
 /** Разбор LRC: [mm:ss.xx]текст, несколько меток на строку, [offset:±мс], «улучшенный» LRC с <mm:ss.xx>. */
 function parseLrc(text) {
@@ -25,11 +26,12 @@ function parseLrc(text) {
     }
     const body = raw.slice(lastEnd).replace(/<\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?>/g, '').trim();
     if (times.length) {
-      for (const t of times) synced.push({ t: Math.max(0, t + offset / 1000), text: body });
+      for (const t of times) synced.push({ t, text: body });
     } else if (raw.trim()) {
       plainLines.push(raw.trim());
     }
   }
+  synced.forEach((line) => { line.t = Math.max(0, line.t + offset / 1000); });
   synced.sort((a, b) => a.t - b.t);
   const plain = synced.length ? synced.map((l) => l.text).join('\n') : plainLines.join('\n');
   return { synced: synced.length ? synced : null, plain: plain || null };
@@ -81,10 +83,11 @@ async function getLyrics(track, deps) {
 
   // Кэш онлайн-запросов
   const cacheFile = cacheDir ? path.join(cacheDir, `${track.id}.json`) : null;
-  if (cacheFile) {
+  if (cacheFile && !deps.force) {
     try {
       const c = JSON.parse(await fsp.readFile(cacheFile, 'utf8'));
-      const fresh = Date.now() - (c.fetchedAt || 0) < (c.synced || c.plain ? 90 : 7) * 86400000;
+      const fingerprint = `${track.title}|${track.artist}|${Math.round(track.duration || 0)}`;
+      const fresh = (!c.fingerprint || c.fingerprint === fingerprint) && Date.now() - (c.fetchedAt || 0) < (c.synced ? 90 : c.plain ? 1 : 0.25) * 86400000;
       if (fresh) {
         if (c.synced) return { synced: c.synced, plain: c.plain, source: 'lrclib', instrumental: !!c.instrumental };
         if (c.instrumental) return { synced: null, plain: null, source: 'lrclib', instrumental: true };
@@ -104,6 +107,7 @@ async function getLyrics(track, deps) {
       await fsp.mkdir(cacheDir, { recursive: true });
       await fsp.writeFile(cacheFile, JSON.stringify({
         fetchedAt: Date.now(),
+        fingerprint: `${track.title}|${track.artist}|${Math.round(track.duration || 0)}`,
         synced: online1 && online1.synced, plain: online1 && online1.plain,
         instrumental: !!(online1 && online1.instrumental), negative: !online1,
       }));
@@ -119,33 +123,37 @@ async function getLyrics(track, deps) {
 /** @returns {Promise<null|{synced,plain,instrumental}>} null — не нашли; бросает ошибку — нет сети */
 async function fetchLrclib(track, doFetch) {
   const base = 'https://lrclib.net/api';
-  const headers = { 'User-Agent': 'PixelPlayerDesktop/1.0 (local music player)' };
-  const artist = track.artist || (track.artists && track.artists[0]) || '';
-  const q = new URLSearchParams({ track_name: track.title, artist_name: artist });
+  const headers = { 'User-Agent': 'PixelPlayerDesktop/1.2 (https://github.com/N0pulsse/pixelplayer)' };
+  const artist = splitArtistCredit(track.artists?.length ? track.artists : track.artist)[0] || '';
+  const title = cleanTitle(track.title);
+  const q = new URLSearchParams({ track_name: title, artist_name: artist });
   if (track.album) q.set('album_name', track.album);
   if (track.duration) q.set('duration', String(Math.round(track.duration)));
 
+  let best = null;
   const get = await doFetch(`${base}/get?${q}`, { headers });
   if (get.ok) {
     const j = await get.json();
     const r = shape(j);
-    if (r) return r;
+    if (r?.synced || r?.instrumental) return r;
+    best = r;
   } else if (get.status !== 404) {
     throw new Error(`LRCLIB ${get.status}`);
   }
 
-  const s = new URLSearchParams({ track_name: track.title });
+  const s = new URLSearchParams({ track_name: title });
   if (artist) s.set('artist_name', artist);
-  const res = await doFetch(`${base}/search?${s}`, { headers });
-  if (!res.ok) { if (res.status === 404) return null; throw new Error(`LRCLIB ${res.status}`); }
+  let res;
+  try { res = await doFetch(`${base}/search?${s}`, { headers }); } catch (error) { if (best) return best; throw error; }
+  if (!res.ok) { if (res.status === 404 || best) return best; throw new Error(`LRCLIB ${res.status}`); }
   const list = await res.json();
-  if (!Array.isArray(list) || !list.length) return null;
+  if (!Array.isArray(list) || !list.length) return best;
   const dur = track.duration || 0;
   const scored = list
     .map((x) => ({ x, d: dur && x.duration ? Math.abs(x.duration - dur) : 5 }))
-    .filter((e) => e.d <= 6)
+    .filter((e) => e.d <= 6 && (!e.x.trackName || artistKey(cleanTitle(e.x.trackName)) === artistKey(title)) && (!artist || !e.x.artistName || splitArtistCredit(e.x.artistName).some((a) => artistKey(a) === artistKey(artist))))
     .sort((a, b) => (Number(!!b.x.syncedLyrics) - Number(!!a.x.syncedLyrics)) || a.d - b.d);
-  return scored.length ? shape(scored[0].x) : null;
+  return scored.length ? (shape(scored[0].x) || best) : best;
 }
 
 function shape(j) {

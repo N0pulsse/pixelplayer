@@ -87,6 +87,7 @@ function parseFilename(file) {
 
 /** Делим строку исполнителей: «A; B», «A feat. B», «A / B». «AC/DC» не трогаем. */
 function splitArtists(str, extra = []) {
+  if (!extra.length) return require('./identity').splitArtistCredit(str);
   if (!str) return [];
   const seps = [';', ' / ', ' feat. ', ' feat ', ' ft. ', ' ft ', ' featuring ', ' & ', ...extra];
   // «&» делим только если явно включено пользователем — по умолчанию не делим (Simon & Garfunkel)

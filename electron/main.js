@@ -1,6 +1,6 @@
 'use strict';
 const {
-  app, BrowserWindow, ipcMain, dialog, protocol, shell, nativeImage, net, Tray, Menu,
+  app, BrowserWindow, ipcMain, dialog, protocol, shell, nativeImage, net, Tray, Menu, safeStorage,
 } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -16,6 +16,7 @@ const { createHandler } = require('./protocol');
 const { isAudioFile, sha1, withTimeout, AUDIO_EXTS } = require('./util');
 const { configureStorage } = require('./storage');
 const { decodePlaylist, parseM3u, serializeM3u } = require('./playlists');
+const { registerFeatures } = require('./features');
 
 const APP_ID = 'com.pixelplayer.desktop';
 const ICON = path.join(__dirname, '..', 'build', 'icon.png');
@@ -269,6 +270,7 @@ function createTray() {
 /* ───────────────────────── IPC ───────────────────────── */
 
 function registerIpc(firstRun) {
+  registerFeatures({ app, ipcMain, dialog, getWindow: () => win, store, library, net, nativeImage, safeStorage });
   // Библиотека
   ipcMain.handle('lib:get', () => ({
     tracks: library.getTracks(),
@@ -387,11 +389,14 @@ function registerIpc(firstRun) {
   });
 
   // Тексты и картинки исполнителей
-  ipcMain.handle('lyrics:get', async (_e, track) => {
+  ipcMain.handle('lyrics:get', async (_e, requested, force) => {
+    const track = requested && (library.cache.get(requested.id) || library.adhoc.get(requested.id));
+    if (!track) return null;
     const settings = store.get('settings') || {};
     return getLyrics(track, {
       cacheDir: path.join(app.getPath('userData'), 'lyrics'),
       online: settings.onlineLyrics !== false,
+        force: !!force,
       readEmbedded: async (p) => { const t = await readTags(p, { covers: false }); return t && t.lyrics; },
       fetch: (url, opts) => net.fetch(url, { ...opts, signal: AbortSignal.timeout(8000) }),
     });
@@ -441,7 +446,7 @@ const artistWaiters = [];
 async function artistImage(name) {
   const settings = store.get('settings') || {};
   if (settings.artistImages === false || !name) return null;
-  const key = sha1(name.toLowerCase()).slice(0, 16);
+  const key = sha1('v2:' + name.toLowerCase()).slice(0, 16);
   const dir = path.join(app.getPath('userData'), 'artists');
   const file = path.join(dir, `${key}.jpg`);
   if (fs.existsSync(file)) return `pp://app/artist/${key}`;
@@ -454,11 +459,11 @@ async function artistImage(name) {
     artistActive += 1;
     try {
       await fsp.mkdir(dir, { recursive: true });
-      const res = await net.fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=3`, { signal: AbortSignal.timeout(8000) });
+      const res = await net.fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=20`, { signal: AbortSignal.timeout(8000) });
       if (!res.ok) throw new Error(`deezer ${res.status}`);
       const j = await res.json();
       const nrm = (s) => String(s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
-      const hit = (j.data || []).find((a) => nrm(a.name) === nrm(name));
+      const hit = (j.data || []).filter((a) => nrm(a.name) === nrm(name)).sort((a,b) => (b.nb_fan || 0) - (a.nb_fan || 0))[0];
       const pic = hit && (hit.picture_big || hit.picture_xl);
       if (!pic || /\/images\/artist\/\/|2a96cbd8b46e442fc41c2b86b821562f/.test(pic)) {
         misses[key] = Date.now(); store.set('artistMiss', misses);

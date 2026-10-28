@@ -1,14 +1,14 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { ui, closeNowPlaying, openMenu } from '../state/ui';
-import { settings } from '../state/settings';
+import { settings, setSetting } from '../state/settings';
 import {
   player, engine, useCurrent, usePlayer, getPosition, seek, seekBy, next, prev, toggleShuffle, cycleRepeat,
   setVolume, toggleMute, setSleep, playIndex, removeFromQueue, moveInQueue, clearQueue,
   setPlaybackRate,
 } from '../state/player';
 import { user, toggleFavorite } from '../state/userdata';
-import { useLyrics } from '../state/lyrics';
+import { useLyrics, loadLyrics } from '../state/lyrics';
 import { go } from '../state/nav';
 import { getIndex } from '../state/library';
 import { norm } from '../lib/search';
@@ -26,14 +26,14 @@ import { api } from '../api';
 
 /* ───────────── тексты ───────────── */
 
-function useActiveLine(lines) {
+function useActiveLine(lines, offset = 0) {
   const [i, setI] = useState(-1);
   const ref = useRef(-1);
   useEffect(() => {
     if (!lines) return undefined;
     let raf;
     const loop = () => {
-      const p = getPosition() + 0.12;
+      const p = getPosition() + 0.12 + offset;
       let lo = 0; let hi = lines.length - 1; let r = -1;
       while (lo <= hi) { const m = (lo + hi) >> 1; if (lines[m].t <= p) { r = m; lo = m + 1; } else hi = m - 1; }
       if (r !== ref.current) { ref.current = r; setI(r); }
@@ -41,18 +41,22 @@ function useActiveLine(lines) {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [lines]);
+  }, [lines, offset]);
   return lines ? i : -1;
 }
 
 function LyricsView({ active = true }) {
+  const track = useCurrent();
+  const offsets = useStore(settings, (s) => s.lyricsOffsets);
+  const offset = offsets?.[track?.id] || 0;
+  const changeOffset = (value) => setSetting({ lyricsOffsets: { ...offsets, [track.id]: Math.max(-30, Math.min(30, value)) } });
   const lyr = useLyrics(active);
   const [mode, setMode] = useState('synced');
   const synced = lyr.data && lyr.data.synced;
   const plain = lyr.data && (lyr.data.plain || (synced ? synced.map((l) => l.text).join('\n') : null));
   const eff = synced && mode === 'synced' ? 'synced' : 'static';
   const lines = eff === 'synced' ? synced : null;
-  const act = useActiveLine(lines);
+  const act = useActiveLine(lines, offset);
   const box = useRef(null);
   const manual = useRef(0);
 
@@ -67,7 +71,7 @@ function LyricsView({ active = true }) {
   if (lyr.status === 'loading') return <div className="ly-state"><LoadingIndicator size={64} /><p className="t-body-l">Ищу текст…</p></div>;
   if (!lyr.data) return (
     <div className="ly-state"><Icon name="lyrics" size={48} /><h3 className="t-headline-s">Текста нет</h3>
-      <p className="t-body-l">Положите рядом с песней файл .lrc с тем же именем — или включите онлайн-поиск в настройках.</p></div>
+      <p className="t-body-l">Положите рядом с песней файл .lrc с тем же именем — или включите онлайн-поиск в настройках.</p><Button variant="tonal" icon="refresh" onClick={() => loadLyrics(track, { force: true })}>Искать заново</Button></div>
   );
   if (lyr.data.instrumental) return <div className="ly-state"><Icon name="piano" size={48} /><h3 className="t-headline-s">Инструментальная композиция</h3><p className="t-body-l">Здесь только музыка.</p></div>;
 
@@ -78,6 +82,11 @@ function LyricsView({ active = true }) {
           <button className={cx(eff === 'synced' && 'on')} disabled={!synced} onClick={() => setMode('synced')} style={!synced ? { opacity: .45 } : undefined}>Синхронно</button>
           <button className={cx(eff === 'static' && 'on')} onClick={() => setMode('static')}>Текстом</button>
         </div>
+        <IconButton icon="refresh" size="s" label="Искать текст заново" onClick={() => loadLyrics(track, { force: true })} />
+      </div>
+      <div className="lyrics-tools">
+        <span className="t-body-s">{lyr.data.source === 'lrclib' ? 'LRCLIB' : lyr.data.source === 'lrc' ? 'Локальный LRC' : 'Встроенный текст'}{synced ? ' · синхронизирован' : ' · обычный текст'}</span>
+        {synced && <div className="lyrics-offset"><button className="btn text s" onClick={() => changeOffset(offset - 0.5)} aria-label="Текст на полсекунды позже">−0,5 с</button><button className="btn tonal s" title="Сбросить поправку" onClick={() => changeOffset(0)}>{offset > 0 ? '+' : ''}{offset.toFixed(1)} с</button><button className="btn text s" onClick={() => changeOffset(offset + 0.5)} aria-label="Текст на полсекунды раньше">+0,5 с</button></div>}
       </div>
       <div className="ly-scroll" ref={box} onWheel={() => { manual.current = Date.now(); }} onPointerDown={() => { manual.current = Date.now(); }}>
         {eff === 'synced' ? (
@@ -85,7 +94,7 @@ function LyricsView({ active = true }) {
             <div className="ly-pad" />
             {lines.map((l, i) => (
               <button key={i} data-i={i} className={cx('ly-line', i === act && 'cur', i < act && 'past', !l.text && 'gap')}
-                onClick={() => { seek(l.t); manual.current = 0; }}>
+                onClick={() => { seek(Math.max(0, l.t - offset)); manual.current = 0; }}>
                 {l.text || '♪'}
               </button>
             ))}
@@ -93,7 +102,7 @@ function LyricsView({ active = true }) {
           </div>
         ) : (
           <div className="ly-lines static">
-            {plain.split('\n').map((t, i) => <p key={i} className={cx('ly-line static', !t.trim() && 'gap')}>{t || ' '}</p>)}
+            {(plain || '').split('\n').map((t, i) => <p key={i} className={cx('ly-line static', !t.trim() && 'gap')}>{t || ' '}</p>)}
           </div>
         )}
       </div>

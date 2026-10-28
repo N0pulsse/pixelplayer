@@ -50,7 +50,10 @@ contextBridge.exposeInMainWorld('pp', {
     set: (key, value) => ipcRenderer.send('store:set', key, value),
   },
 
-  lyrics: { get: (track) => ipcRenderer.invoke('lyrics:get', track) },
+  lyrics: { get: (track, force) => ipcRenderer.invoke('lyrics:get', track, force) },
+  artistProfile: (name, force) => ipcRenderer.invoke('artist:profile', name, force),
+  ai: { config: () => ipcRenderer.invoke('ai:config'), save: (input) => ipcRenderer.invoke('ai:save', input), generate: (input) => ipcRenderer.invoke('ai:generate', input) },
+  wallpaper: { get: () => ipcRenderer.invoke('wallpaper:get'), pick: () => ipcRenderer.invoke('wallpaper:pick') },
   artistImage: (name) => ipcRenderer.invoke('artist:image', name),
 
   win: {

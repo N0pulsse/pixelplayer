@@ -87,6 +87,7 @@ function handleError(t, version = playVersion) {
 }
 
 function onTrackChanged(t) {
+  if (settings.get().onlineLyrics !== false) import('./lyrics').then((m) => m.loadLyrics(t)).catch(() => {});
   updateMediaSession(t);
   api.win.setTitle(`${t.artist ? `${t.artist} — ` : ''}${t.title} · Pixel Player`);
   saveSession();

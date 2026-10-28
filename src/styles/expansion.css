@@ -1,0 +1,64 @@
+.theme-gallery-wrap { padding: 8px 0 18px; }
+.theme-gallery { display: grid; grid-template-columns: repeat(auto-fit,minmax(158px,1fr)); gap: 12px; padding: 12px; }
+.theme-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 12px; text-align: left; border: 2px solid transparent; background: var(--md-surface-container); border-radius: 24px; transition: transform var(--spatial-fast-dur) var(--spatial-fast-ease),border-color .2s; }
+.theme-card:hover { transform: translateY(-3px); }
+.theme-card.selected { border-color: var(--md-primary); background: var(--md-secondary-container); }
+.theme-card small { color: var(--md-on-surface-variant); font-size: 12px; line-height: 1.5; }
+.theme-sample { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; height: 86px; width: 100%; border-radius: 16px; background: var(--swatch-bg); overflow: hidden; }
+.theme-sample i { width: 48px; height: 48px; border-radius: 50%; background: var(--swatch); transform: translateY(12px); }
+.theme-sample i:nth-child(2) { background: var(--swatch-extra); width: 34px; height: 64px; border-radius: 18px; transform: rotate(25deg); }
+.theme-sample i:nth-child(3) { position: absolute; bottom: 10px; left: 12px; width: 68px; height: 9px; border-radius: 8px; opacity: .7; }
+.theme-sample > .icon { position: absolute; right: 7px; top: 7px; color: var(--swatch); }
+.theme-sample.blocks i { border-radius: 0; transform: none; box-shadow: 5px 5px 0 #0005; }
+.wallpaper-card { margin: 12px; padding: 20px; border-radius: 24px; background: var(--md-surface-container); }
+.wallpaper-head { display: flex; gap: 16px; align-items: center; }
+.wallpaper-head > div { flex: 1; }
+.wallpaper-head p { margin: 5px 0; color: var(--md-on-surface-variant); }
+.wallpaper-dot { width: 40px; height: 40px; border-radius: 14px; box-shadow: inset 0 0 0 1px #fff2; flex: none; }
+.wallpaper-actions,.agent-config-actions,.agent-buttons,.agent-examples { display: flex; flex-wrap: wrap; gap: 10px; }
+.wallpaper-path { overflow-wrap: anywhere; }
+.custom-accent { position: relative; width: 36px; height: 36px; cursor: pointer; display: grid; place-items: center; background: var(--md-surface-container-highest); border-radius: 50%; }
+.custom-accent input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.custom-accent .icon { pointer-events: none; width: 18px; }
+.artist-banner { position: relative; isolation: isolate; overflow: hidden; border-radius: 40px; background: var(--md-primary-container); }
+.artist-banner-image { position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(90deg,#080a12e6,#080a12a0 60%,#080a1260),var(--artist-image); background-size: cover; background-position: center 32%; }
+.artist-banner:has(.artist-banner-image[style]) { color: #fff; }
+.artist-banner .dhero { padding: 42px 28px 32px; margin: 0; color: #f5f5ff; }
+.artist-banner .dhero-kind,.artist-banner .dhero-sub,.artist-banner .dhero-title { color: inherit; }
+.artist-about { padding: 20px 6px; color: var(--md-on-surface-variant); }
+.artist-bio { white-space: pre-line; line-height: 1.75; max-width: 920px; }
+.artist-about summary { cursor: pointer; padding: 8px 0; color: var(--md-on-surface); }
+.online-albums { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 8px; margin-bottom: 28px; max-height: 380px; overflow-y: auto; padding: 4px; }
+.online-album { display: flex; align-items: center; gap: 14px; text-align: left; min-width: 0; padding: 16px; border-radius: 20px; background: var(--md-surface-container); }
+.online-album > span { flex: 1; min-width: 0; }
+.online-album strong,.online-album small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.online-album small { margin-top: 4px; color: var(--md-on-surface-variant); }
+.lyrics-tools { padding: 0 18px 10px; flex: none; display: flex; flex-wrap: wrap; gap: 5px; justify-content: space-between; align-items: center; color: var(--md-on-surface-variant); }
+.lyrics-offset { display: flex; align-items: center; gap: 4px; }
+.lyrics-offset .btn { font-size: 11px; padding: 0 10px; height: 28px; min-height: 28px; }
+.agent-hero { display: flex; align-items: flex-start; gap: 24px; padding: 28px; border-radius: 36px; background: var(--md-primary-container); color: var(--md-on-primary-container); }
+.agent-badge { padding: 20px; border-radius: 28px; background: var(--md-primary); color: var(--md-on-primary); }
+.agent-compose { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 18px; }
+.agent-compose textarea { width: 100%; min-height: 110px; resize: vertical; }
+.agent-compose .field,.agent-config .field { min-height: 52px; border: 1px solid var(--md-outline-variant); border-radius: 16px; padding: 14px 16px; font: 400 15px/1.5 var(--font); transition: border-color .2s; }
+.agent-compose .field:focus,.agent-config .field:focus { outline: 2px solid var(--md-primary); outline-offset: 1px; border-color: transparent; }
+.agent-options .field { appearance: auto; margin-top: 4px; }
+.agent-compose .field,.agent-config .field,.agent-options .field { background: var(--md-surface-container-low); color: var(--md-on-surface); width: 100%; }
+.agent-options { display: flex; flex-wrap: wrap; gap: 18px; }
+.agent-options label { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 130px; }
+.agent-config { padding: 22px; display: flex; flex-direction: column; gap: 16px; background: var(--md-surface-container); border-radius: 28px; }
+.agent-config label { display: flex; flex-direction: column; gap: 8px; font-weight: 550; }
+.agent-config p { line-height: 1.65; color: var(--md-on-surface-variant); margin: 0; }
+.agent-config-actions { margin-top: 8px; }
+.agent-settings,.agent-result { margin-top: 30px; }
+.agent-progress { display: flex; align-items: center; gap: 18px; padding: 28px; }
+.agent-error { margin: 20px 0; padding: 20px; border-radius: 24px; background: var(--md-error-container); color: var(--md-on-error-container); }
+.agent-result .sec-head p { max-width: 800px; line-height: 1.6; }
+.agent-message { color: var(--md-primary); }
+:root[data-preset='blockcraft'],:root[data-preset='nether'] { --font: 'Consolas','Roboto Flex',monospace; }
+:root:is([data-preset='blockcraft'],[data-preset='nether']) :is(.hero,.card,.mini,.first-listen,.list-card,.srow,.theme-card,.agent-hero,.dialog,.artist-banner,.wallpaper-card) { border-radius: 5px; border: 2px solid color-mix(in srgb,var(--md-primary) 25%,transparent); }
+:root:is([data-preset='blockcraft'],[data-preset='nether']) :is(.btn,.ibtn,.playbtn,.chip,.rail-ind,.bnav-ind,.seg button) { border-radius: 4px !important; box-shadow: 0 3px 0 #0005; }
+:root:is([data-preset='blockcraft'],[data-preset='nether']) .stage { background-image: linear-gradient(#fff02 1px,transparent 1px),linear-gradient(90deg,#fff02 1px,transparent 1px); background-size: 24px 24px; }
+:root:is([data-preset='blockcraft'],[data-preset='nether']) .hero-blobs .blob { clip-path: none !important; border-radius: 4px; }
+:root[data-preset='cyber'] .hero { box-shadow: 0 0 50px color-mix(in srgb,var(--md-primary) 15%,transparent); }
+@media (max-width: 680px) { .agent-hero { flex-direction: column; padding: 20px; gap: 16px; } .agent-badge { padding: 14px; } .artist-banner .dhero { padding: 24px 16px; } .artist-banner .dhero-art { width: 140px !important; height: 140px !important; } .theme-gallery { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; } .theme-card { padding: 9px; } .wallpaper-card { padding: 16px; } .agent-config { padding: 18px; } .bnav-item .t-label-s { font-size: 10px; } }

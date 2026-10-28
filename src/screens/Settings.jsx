@@ -11,6 +11,8 @@ import { Icon } from '../ui/Icon';
 import { api } from '../api';
 import { VARIANTS, SEEDS } from '../lib/color';
 import { cx, count, songsWord } from '../lib/util';
+import { ThemeGallery } from '../components/ThemeGallery';
+import { AgentConfig } from './Assistant';
 
 function Group({ title, children }) {
   return (<section className="sgroup"><h2 className="t-label-l sgroup-title">{title}</h2><div className="sgroup-body">{children}</div></section>);
@@ -76,12 +78,13 @@ export function Settings() {
       </Group>
 
       <Group title="Внешний вид">
+        <ThemeGallery />
         <Row icon="contrast" title="Тема">
           <div className="seg">
             {[['dark', 'Тёмная'], ['light', 'Светлая'], ['system', 'Как в Windows']].map(([k, l]) => <button key={k} className={cx(s.themeMode === k && 'on')} onClick={() => setSetting({ themeMode: k })}>{l}</button>)}
           </div>
         </Row>
-        <Toggle icon="palette" title="Цвета из обложки" sub="Интерфейс подстраивается под играющий альбом" k="dynamicColor" />
+        <Row icon="palette" title="Цвета из обложки" sub="Интерфейс подстраивается под играющий альбом"><Switch on={s.dynamicColor} label="Цвета из обложки" onChange={(value) => setSetting({ dynamicColor: value, wallpaperSync: false })} /></Row>
         <Row icon="format_paint" title="Стиль палитры" sub={VARIANTS[s.variant].label}>
           <div className="variants">
             {Object.entries(VARIANTS).map(([k, v]) => <button key={k} className={cx('vchip state', s.variant === k && 'on')} onClick={() => setSetting({ variant: k })}>{v.label}</button>)}
@@ -89,7 +92,8 @@ export function Settings() {
         </Row>
         <Row icon="colorize" title="Основной цвет" sub={s.dynamicColor ? 'Используется, когда ничего не играет' : 'Основа всей палитры'}>
           <div className="seeds">
-            {SEEDS.map((c) => <button key={c} className={cx('seed', s.seed === c && 'on')} style={{ background: c }} onClick={() => setSetting({ seed: c })} aria-label={c} />)}
+            {SEEDS.map((c) => <button key={c} className={cx('seed', s.seed === c && 'on')} style={{ background: c }} onClick={() => setSetting({ seed: c, dynamicColor: false, wallpaperSync: false })} aria-label={c} />)}
+            <label className="custom-accent" title="Свой цвет"><input type="color" value={s.seed} aria-label="Свой цвет акцента" onChange={(e) => setSetting({ seed: e.target.value, dynamicColor: false, wallpaperSync: false })} /><Icon name="colorize" /></label>
           </div>
         </Row>
         <Toggle icon="blur_on" title="Размытая обложка на фоне плеера" k="blurBackground" />
@@ -134,8 +138,9 @@ export function Settings() {
 
       <Group title="Интернет">
         <Toggle icon="lyrics" title="Искать тексты песен онлайн" sub="LRCLIB: отправляется название, исполнитель и длительность трека. Тексты из .lrc-файлов и тегов используются в первую очередь" k="onlineLyrics" />
-        <Toggle icon="person" title="Фото исполнителей" sub="Deezer: отправляется только имя исполнителя" k="artistImages" />
+        <Toggle icon="person" title="Профили исполнителей из интернета" sub="TheAudioDB / Deezer: фото, шапки, биографии и дискографии. Отправляется имя артиста; найденное сохраняется для офлайн-просмотра" k="artistImages" />
       </Group>
+      <Group title="ИИ-агент для плейлистов"><AgentConfig /></Group>
 
       <Group title="О приложении">
         <Row icon="info" title="Pixel Player" sub={`Версия ${info.version || ''} · ${info.portable ? 'Портативная версия — без установки' : 'Настольная версия'}`} />

@@ -5,6 +5,7 @@ import { norm, queryVariants, scoreText } from '../lib/search';
 import { settings } from './settings';
 import { api } from '../api';
 import { toast } from './ui';
+import { albumIdentity, splitArtistCredit } from '../../electron/identity';
 
 export const libStore = createStore({
   ready: false, tracks: [], folders: [], scanning: false, progress: null, firstRun: false, lastDone: null,
@@ -79,7 +80,7 @@ export function buildIndex(tracks, minDuration) {
   const groups = new Map();
   for (const t of list) {
     if (!t.album) continue;
-    const key = `${norm(t.album)}|${norm(t.albumArtist || '')}`;
+    const key = albumIdentity(t).key;
     let g = groups.get(key);
     if (!g) groups.set(key, (g = []));
     g.push(t);
@@ -92,7 +93,7 @@ export function buildIndex(tracks, minDuration) {
     const artist = albumArtist || (artistSet.size === 1 ? (ts[0].artist || '') : VARIOUS);
     const id = 'al' + hashStr(keySeed).toString(36);
     const al = {
-      id, title, artist, various: !albumArtist && artistSet.size > 1,
+      id, title, artist, various: artist === VARIOUS || (!albumArtist && artistSet.size > 1),
       year: ts.map((t) => t.year).filter(Boolean).sort()[0] || null,
       cover: (ts.find((t) => t.cover) || {}).cover || null,
       trackIds: ts.map((t) => t.id),
@@ -105,17 +106,7 @@ export function buildIndex(tracks, minDuration) {
   };
   for (const [key, ts] of groups) {
     const title = ts[0].album;
-    if (!ts[0].albumArtist) {
-      const artists = new Set(ts.map((t) => norm(t.artist || '')));
-      const folders = new Set(ts.map((t) => t.folder));
-      if (artists.size > 1 && folders.size > 1) { // одинаковое название у разных исполнителей в разных папках
-        const byFolder = new Map();
-        for (const t of ts) { if (!byFolder.has(t.folder)) byFolder.set(t.folder, []); byFolder.get(t.folder).push(t); }
-        for (const [folder, sub] of byFolder) pushAlbum(title, null, sub, key + folder);
-        continue;
-      }
-    }
-    pushAlbum(title, ts[0].albumArtist || null, ts, key);
+    pushAlbum(title, albumIdentity(ts[0]).primary, ts, key);
   }
   const albumById = new Map(albums.map((a) => [a.id, a]));
 
@@ -126,13 +117,13 @@ export function buildIndex(tracks, minDuration) {
     if (!k) return null;
     let a = artistsMap.get(k);
     if (!a) {
-      a = { id: 'ar' + hashStr(k).toString(36), name, trackIds: [], albumIds: new Set(), cover: null, duration: 0 };
+      a = { id: 'ar' + hashStr(k).toString(36), name, trackIds: [], albumIds: new Set(), appearanceAlbumIds: new Set(), cover: null, duration: 0 };
       artistsMap.set(k, a);
     }
     return a;
   };
   for (const t of list) {
-    const names = t.artists && t.artists.length ? t.artists : (t.artist ? [t.artist] : []);
+    const names = splitArtistCredit(t.artists && t.artists.length ? t.artists : t.artist);
     for (const n of names) {
       const a = touchArtist(n);
       if (!a) continue;
@@ -140,15 +131,23 @@ export function buildIndex(tracks, minDuration) {
       a.duration += t.duration || 0;
       if (!a.cover && t.cover) a.cover = t.cover;
       const alId = albumOfTrack.get(t.id);
-      if (alId) a.albumIds.add(alId);
+      if (alId) {
+        if (splitArtistCredit(albumById.get(alId)?.artist).some((name) => norm(name) === norm(a.name))) a.albumIds.add(alId);
+        else a.appearanceAlbumIds.add(alId);
+      }
     }
   }
   for (const al of albums) {
     if (al.various || !al.artist || al.artist === VARIOUS) continue;
-    const a = touchArtist(al.artist);
-    if (a) { a.albumIds.add(al.id); if (!a.cover && al.cover) a.cover = al.cover; }
+    for (const name of splitArtistCredit(al.artist)) {
+      const a = touchArtist(name);
+      if (a) {
+        a.albumIds.add(al.id); if (!a.cover && al.cover) a.cover = al.cover;
+        for (const id of al.trackIds) if (!a.trackIds.includes(id)) { a.trackIds.push(id); a.duration += byId.get(id)?.duration || 0; }
+      }
+    }
   }
-  const artists = [...artistsMap.values()].map((a) => ({ ...a, albumIds: [...a.albumIds] }));
+  const artists = [...artistsMap.values()].map((a) => ({ ...a, albumIds: [...a.albumIds], appearanceAlbumIds: [...a.appearanceAlbumIds] }));
   const artistById = new Map(artists.map((a) => [a.id, a]));
   const artistByName = new Map(artists.map((a) => [norm(a.name), a]));
 

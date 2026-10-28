@@ -102,6 +102,7 @@ export function useArtistImage(name) {
   const [url, setUrl] = useState(artistImgCache.get(name) || null);
   useEffect(() => {
     let off = false;
+    setUrl(artistImgCache.get(name) || null);
     if (artistImgCache.has(name)) { setUrl(artistImgCache.get(name)); return undefined; }
     api.artistImage(name).then((u) => { artistImgCache.set(name, u); if (!off) setUrl(u); }).catch(() => {});
     return () => { off = true; };

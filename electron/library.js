@@ -356,6 +356,8 @@ class Library extends EventEmitter {
       artist,
       artists,
       albumArtist: (tags && tags.albumArtist) || null,
+      compilation: !!(tags && tags.compilation),
+      musicbrainzAlbumId: (tags && tags.musicbrainzAlbumId) || null,
       album: (tags && tags.album) || null,
       year: (tags && tags.year) || null,
       genre: (tags && tags.genre) || null,

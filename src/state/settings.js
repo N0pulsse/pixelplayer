@@ -20,6 +20,10 @@ export const DEFAULTS = {
   reduceMotion: false,
   blurBackground: true,
   railExpanded: false,
+  themePreset: 'material',
+  wallpaperSync: false,
+  wallpaperEnginePath: '',
+  lyricsOffsets: {},
 
   crossfade: 0,
   resume: true,
@@ -50,6 +54,8 @@ function normalize(patch) {
   if ('seed' in result && !/^#[0-9a-f]{6}$/i.test(result.seed)) result.seed = DEFAULTS.seed;
   if ('eqPreset' in result && result.eqPreset !== 'custom' && !Object.hasOwn(EQ_PRESETS, result.eqPreset)) result.eqPreset = 'flat';
   if ('eqBands' in result) result.eqBands = normalizeBands(result.eqBands);
+  if ('themePreset' in result && !['material','blockcraft','nether','oled','sakura','nord','cyber','forest','ocean','amber','paper'].includes(result.themePreset)) result.themePreset = 'material';
+  if ('lyricsOffsets' in result) result.lyricsOffsets = Object.fromEntries(Object.entries(result.lyricsOffsets && typeof result.lyricsOffsets === 'object' ? result.lyricsOffsets : {}).slice(-300).filter(([id, value]) => /^[a-z0-9_-]+$/i.test(id) && Number.isFinite(Number(value))).map(([id, value]) => [id, Math.max(-30, Math.min(30, Number(value)))]));
   return result;
 }
 

@@ -1,4 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
+import { api } from '../api';
+import { settings } from '../state/settings';
+import { norm } from '../lib/search';
 import { useIndex, trackById } from '../state/library';
 import { useStore } from '../lib/store';
 import { user, deletePlaylist, renamePlaylist, removeFromPlaylist, setFavorites } from '../state/userdata';
@@ -50,7 +53,7 @@ export function AlbumScreen({ id }) {
   const album = idx.albumById.get(id);
   const tracks = useMemo(() => (album ? album.trackIds.map((t) => idx.byId.get(t)) : []), [album, idx]);
   if (!album) return <div className="screen-pad"><DetailBar /><Empty title="Альбом не найден" text="Возможно, файлы были удалены." /></div>;
-  const artist = idx.artistByName.get(album.artist.toLowerCase());
+  const artist = idx.artistByName.get(norm(album.artist));
   return (
     <div className="screen-pad">
       <DetailBar />
@@ -68,17 +71,48 @@ export function ArtistScreen({ id }) {
   const idx = useIndex();
   const artist = idx.artistById.get(id);
   const img = useArtistImage(artist ? artist.name : '');
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+  const online = useStore(settings, (s) => s.artistImages);
+  useEffect(() => {
+    let active = true;
+    setProfile(null);
+    if (!artist) return undefined;
+    setLoading(true);
+    api.artistProfile(artist.name, refresh > 0).then((data) => { if (active) setProfile(data); }).catch(() => {}).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [artist?.name, refresh, online]);
   const tracks = useMemo(() => (artist ? artist.trackIds.map((t) => idx.byId.get(t)).sort(SONG_SORTS.album.fn) : []), [artist, idx]);
   const albums = useMemo(() => (artist ? artist.albumIds.map((a) => idx.albumById.get(a)).filter(Boolean).sort((a, b) => (b.year || 0) - (a.year || 0)) : []), [artist, idx]);
   if (!artist) return <div className="screen-pad"><DetailBar /><Empty title="Исполнитель не найден" /></div>;
   return (
     <div className="screen-pad">
       <DetailBar />
-      <Hero cover={artist.cover} imgSrc={img} icon="person" round title={artist.name} meta="Исполнитель"
-        sub={`${count(albums.length, albumsWord)} · ${count(tracks.length, songsWord)}`} tracks={tracks} label={artist.name} />
+      <section className="artist-banner" style={profile?.banner || profile?.image || img ? { '--artist-image': `url("${profile?.banner || profile?.image || img}")` } : undefined}>
+        <div className="artist-banner-image" aria-hidden="true" />
+        <Hero cover={artist.cover} imgSrc={profile?.image || img} icon="person" round title={artist.name} meta={profile?.genre || 'Исполнитель'}
+          sub={[profile?.country, profile?.formed && `С ${profile.formed}`, `${count(albums.length, albumsWord)} · ${count(tracks.length, songsWord)} в библиотеке`].filter(Boolean).join(' · ')} tracks={tracks} label={artist.name}>
+          <IconButton icon="refresh" variant="surface" size="l" label="Обновить данные артиста" disabled={loading || !online} onClick={() => setRefresh((x) => x + 1)} />
+        </Hero>
+      </section>
+      <div className="artist-about">
+        {loading && <p className="t-body-m">Ищем биографию, изображения и дискографию…</p>}
+        {profile?.biography && <details><summary className="t-title-m">Об исполнителе</summary><p className="artist-bio t-body-l">{profile.biography}</p></details>}
+        {profile?.source && <p className="t-body-s">Данные: <button className="link" onClick={() => api.shell.openExternal(profile.url)}>{profile.source}</button>{profile.cached ? ' · сохранённая копия' : ''}</p>}
+        {!loading && !profile?.found && <p className="t-body-m">{!online ? 'Интернет-данные отключены в настройках.' : profile?.offline ? 'Сервис временно недоступен. Музыка на компьютере доступна.' : 'Надёжного совпадения в интернете не найдено.'}</p>}
+      </div>
+      {profile?.albums?.length > 0 && <section><SectionHeader title="Дискография в интернете" /><div className="online-albums">
+        {profile.albums.map((album, i) => {
+          const local = albums.find((a) => norm(a.title) === norm(album.title));
+          return <button className="online-album state" key={`${album.title}:${i}`} onClick={() => local ? go({ name: 'album', id: local.id }) : api.shell.openExternal(album.url || profile.url)}>
+            <Icon name={local ? 'album' : 'language'} /><span><strong>{album.title}</strong><small>{[album.year, album.type, local ? 'В библиотеке' : 'Открыть источник'].filter(Boolean).join(' · ')}</small></span><Icon name="chevron_right" />
+          </button>;
+        })}
+      </div></section>}
       {albums.length > 0 && (
         <section>
-          <SectionHeader title="Альбомы" />
+          <SectionHeader title="Альбомы в библиотеке" />
           <Shelf>{albums.map((a, i) => <AlbumCard key={a.id} album={a} i={i} onClick={() => go({ name: 'album', id: a.id })}
             onPlay={() => playTracks(a.trackIds.map((t) => idx.byId.get(t)), 0, { label: a.title })} />)}</Shelf>
         </section>
