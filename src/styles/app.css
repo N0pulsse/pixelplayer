@@ -55,9 +55,16 @@
 
 .loader { display: grid; place-items: center; flex: none; }
 .loader.contained { border-radius: 50%; background: var(--md-primary-container); }
-.loader-shape { background: var(--md-primary); }
-.loader.contained .loader-shape { background: var(--md-on-primary-container); }
-.loader:not(.contained) .loader-shape { background: var(--md-primary); }
+.loader-visual { color: var(--md-primary); overflow: visible; }
+.loader.contained .loader-visual { color: var(--md-on-primary-container); }
+.loader-ring-track { stroke: currentColor; stroke-width: 1.5; opacity: .15; }
+.loader-ring { stroke: currentColor; stroke-width: 2; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 24px 24px; transition: stroke-dashoffset 300ms ease; }
+.loader-ring.orbit { animation: loader-orbit 2.4s linear infinite; }
+.loader-bar { fill: currentColor; transform-box: fill-box; transform-origin: center; animation: loader-wave 1.15s cubic-bezier(.45,0,.55,1) infinite; }
+@keyframes loader-wave { 0%, 100% { transform: scaleY(.48); } 50% { transform: scaleY(1); } }
+@keyframes loader-orbit { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
+html[data-motion='reduced'] .loader-bar, html[data-motion='reduced'] .loader-ring.orbit { animation: none; }
+@media (prefers-reduced-motion: reduce) { .loader-bar, .loader-ring.orbit { animation: none; } }
 
 /* ═════════════ Списки ═════════════ */
 .list-card { background: var(--md-surface-container-lowest); border-radius: var(--r-xl-inc); padding: 8px; }

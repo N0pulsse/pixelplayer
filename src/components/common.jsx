@@ -41,7 +41,7 @@ export function ScanStatus() {
   }
   return (
     <div className="scan rise">
-      <LoadingIndicator size={52} />
+      <LoadingIndicator size={52} progress={frac} label="Сканирование музыки" />
       <div className="scan-text">
         <div className="t-title-m">{text}</div>
         <div className="t-body-s scan-sub">В библиотеке уже {count(total, songsWord)} — можно слушать, пока идёт поиск</div>
