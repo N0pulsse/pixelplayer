@@ -54,6 +54,16 @@ contextBridge.exposeInMainWorld('pp', {
   artistProfile: (name, force) => ipcRenderer.invoke('artist:profile', name, force),
   ai: { config: () => ipcRenderer.invoke('ai:config'), save: (input) => ipcRenderer.invoke('ai:save', input), generate: (input) => ipcRenderer.invoke('ai:generate', input) },
   wallpaper: { get: () => ipcRenderer.invoke('wallpaper:get'), pick: () => ipcRenderer.invoke('wallpaper:pick') },
+  spotify: {
+    status: () => ipcRenderer.invoke('spotify:status'),
+    client: (value) => ipcRenderer.invoke('spotify:client', value),
+    start: () => ipcRenderer.invoke('spotify:start'), cancel: () => ipcRenderer.invoke('spotify:cancel'),
+    disconnect: () => ipcRenderer.invoke('spotify:disconnect'),
+    browse: (input) => ipcRenderer.invoke('spotify:browse', input),
+    devices: () => ipcRenderer.invoke('spotify:devices'), playback: () => ipcRenderer.invoke('spotify:playback'),
+    command: (input) => ipcRenderer.invoke('spotify:command', input),
+    onStatus: (cb) => on('spotify:status', cb),
+  },
   artistImage: (name) => ipcRenderer.invoke('artist:image', name),
 
   win: {

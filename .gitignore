@@ -9,3 +9,5 @@ qa/
 .env
 .env.*
 *.log
+spotify-session.bin
+spotify-session.bin.tmp

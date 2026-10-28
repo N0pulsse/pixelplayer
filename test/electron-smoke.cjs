@@ -23,6 +23,16 @@ const originalReadTags = require('../electron/meta').readTags;
 require('../electron/meta').readTags = async (file, options) => ({ ...await originalReadTags(file, options), artist: 'Pixel QA Artist', artists: ['Pixel QA Artist'], albumArtist: 'Pixel QA Artist', album: 'QA Album' });
 require('../electron/artists').ArtistProfiles.prototype.get = async (name) => ({ name, found: true, biography: 'Synthetic artist biography for automated UI verification.', genre: 'Electronic', country: 'QA', albums: [{ title: 'QA Album', year: '2026', url: 'https://example.com/album' }, { title: 'Another Album', year: '2025', url: 'https://example.com/another' }], source: 'Test fixture', url: 'https://example.com' });
 require('../electron/wallpaper').WallpaperPalette.prototype.get = async () => ({ color: '#148a6a', source: 'Wallpaper Engine · test fixture', engine: true });
+// Synthetic Spotify transport: UI tests never contact or control a real account.
+const Spotify = require('../electron/spotify').Spotify;
+const spotifyCalls = [];
+const spotifyTrack = { id:'a'.repeat(22), uri:'spotify:track:'+'a'.repeat(22), title:'Synthetic Spotify Song', artist:'QA Artist', album:'QA Album', duration:120000, playable:true, position:0 };
+let spotifyPlayback = null;
+Spotify.prototype.status = () => ({ connected:true, clientId:'0'.repeat(32), encrypted:true, redirectUri:'http://127.0.0.1:43827/callback' });
+Spotify.prototype.browse = async function(input) { return { items: ['playlists','albums'].includes(input.kind) ? [{id:'b'.repeat(22),uri:'spotify:playlist:'+'b'.repeat(22),type:'playlist',name:'QA Spotify Playlist',subtitle:'Synthetic collection'}] : [spotifyTrack], total:1, nextOffset:null }; };
+Spotify.prototype.devices = async () => [{id:'qa-device',name:'QA Computer',type:'Computer',active:true,restricted:false,supportsVolume:true,volume:20}];
+Spotify.prototype.playback = async () => spotifyPlayback && { ...spotifyPlayback, at:Date.now() };
+Spotify.prototype.command = async function(input) { spotifyCalls.push(input); if(input.action==='play') spotifyPlayback={track:spotifyTrack,playing:true,position:0,device:{id:'qa-device',name:'QA Computer',supportsVolume:true,volume:20},shuffle:false,repeat:'off',disallows:{}}; if(input.action==='pause'&&spotifyPlayback) spotifyPlayback.playing=false; return null; };
 const agentServer = http.createServer((request, response) => {
   let body = '';
   request.on('data', (chunk) => { body += chunk; });
@@ -136,11 +146,29 @@ app.on('browser-window-created', (_event, window) => {
       await waitFor('!!document.querySelector(".artist-banner") && document.querySelector(".artist-about").textContent.includes("Synthetic artist")');
       assert.equal(await js('document.querySelectorAll(".online-album").length'),2);
       await shot('artist-header');
+      await js('[...document.querySelectorAll(".rail-item")].find(b=>b.textContent.includes("Spotify")).click()');
+      await waitFor('document.querySelectorAll(".sp-card").length === 1');
+      await shot('spotify-library');
+      await click('.sp-card');
+      await waitFor('document.querySelectorAll(".sp-track").length === 1');
+      await click('.sp-track-play');
+      await waitFor('!!document.querySelector(".sp-mini")');
+      assert.equal(await js('window.__pp.engine.paused'),true);
+      assert.equal(spotifyCalls.find(c=>c.action==='play').context,'spotify:playlist:'+'b'.repeat(22));
+      await click('.sp-mini [aria-label="Пауза Spotify"]');
+      assert(spotifyCalls.some(c=>c.action==='pause'));
+      await shot('spotify-playing');
+      window.setSize(420,640); await delay(300); await shot('spotify-compact');
+      assert(await js('(()=>{const r=document.querySelector(".sp-mini").getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;})()'));
+      await js('window.__pp.engine.play()');
+      await waitFor('!document.querySelector(".sp-mini")');
+      assert.equal(spotifyCalls[spotifyCalls.length-1].action,'pause');
+      await js('[...document.querySelectorAll(".bnav-item")].find(b=>b.textContent.includes("Библиотека")).click()');
       // Minimum supported desktop size retains navigation and playback actions.
       window.setSize(420, 640);
       await delay(300);
       await shot('compact-light');
-      assert.equal(await js('document.querySelectorAll(".bnav-item").length'), 5);
+      assert.equal(await js('document.querySelectorAll(".bnav-item").length'), 6);
       await click('.mini-exp');
       await shot('compact-playing-light');
       assert(await js('(()=>{const r=document.querySelector(".np-sec").getBoundingClientRect();return r.height>0 && r.bottom<=innerHeight;})()'));

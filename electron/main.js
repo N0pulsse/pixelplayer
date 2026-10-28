@@ -270,7 +270,7 @@ function createTray() {
 /* ───────────────────────── IPC ───────────────────────── */
 
 function registerIpc(firstRun) {
-  registerFeatures({ app, ipcMain, dialog, getWindow: () => win, store, library, net, nativeImage, safeStorage });
+  registerFeatures({ app, ipcMain, dialog, getWindow: () => win, store, library, net, nativeImage, safeStorage, shell });
   // Библиотека
   ipcMain.handle('lib:get', () => ({
     tracks: library.getTracks(),
