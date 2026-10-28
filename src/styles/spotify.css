@@ -38,3 +38,13 @@
 .sp-mini { margin:0; border-radius:28px; width:100%; box-shadow:0 8px 32px #0004; padding:12px 18px; } .sp-mini .sp-art { width:52px; } .sp-mini .sp-now { padding:0; }
 @media (max-width:1100px) { .sp-volume { display:none; } .sp-player-top { gap:10px; } }
 @media (max-width:680px) { .sp-hero { padding:22px; gap:16px; flex-wrap:wrap; } .sp-hero-mark { width:68px; height:68px; border-radius:24px; } .sp-status { margin-left:0; } .sp-player-top { flex-wrap:wrap; justify-content:center; } .sp-now { flex-basis:100%; } .sp-mini .sp-now { flex-basis:0; } .sp-mini .sp-transport .ibtn:not(.filled) { display:none; } .sp-mini .sp-now strong { font-size:14px; } .sp-mini .sp-art { width:44px; } .sp-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .sp-setup { padding:20px; } .sp-devices { flex-wrap:wrap; } .sp-devices label { min-width:150px; } .sp-track { gap:8px; } .sp-track > span { font-size:12px; } .bnav-ind { width:min(48px,13vw); } .bnav-item { min-width:0; } .bnav-item .t-label-s { font-size:9px; } }
+
+.sp-mode-card{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:22px 24px;margin-bottom:20px;border-radius:28px;background:var(--md-surface-container);}
+.sp-mode-card>div:first-child{flex:1;min-width:200px}.sp-mode-card h2{margin:0 0 6px}.sp-mode-card p{margin:0;color:var(--md-on-surface-variant)}
+.sp-seek .wavy{flex:1;min-width:0}.sp-mini{pointer-events:auto;max-width:1200px;margin:0 16px}.sp-mini .sp-seek{margin-top:6px}.sp-mini .sp-now{min-width:120px}
+.sp-player .playbtn{flex:none}.sp-player .playbtn:disabled{opacity:.55;cursor:wait}.sp-volume .slider{flex:1;min-width:50px}.sp-volume{width:170px}
+.app[data-spotify=true]{--mini-h:156px}
+@media(max-width:1100px){.sp-volume{display:flex;width:130px}}
+@media(max-width:760px){.sp-volume{display:none}.sp-player-top{flex-wrap:wrap}.sp-now{flex-basis:100%}.sp-transport{margin:auto}.sp-mini .sp-now{flex-basis:100%}.sp-mini .sp-transport .ibtn:not(.filled){display:inline-flex}.sp-mini{padding:12px 16px}.app[data-spotify=true]{--mini-h:220px}.sp-mini .sp-player-top{gap:6px}.sp-mini .sp-art{width:40px}.sp-mini .sp-label{font-size:9px}.sp-mini .playbtn{--s:48px!important}.sp-mode-card .seg{width:100%}.sp-mode-card{padding:18px}.sp-seek{gap:8px}}
+
+.sp-preview-note{padding:14px 18px;border:1px solid var(--md-outline-variant);border-radius:18px;color:var(--md-on-surface-variant);line-height:1.5}

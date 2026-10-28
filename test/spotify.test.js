@@ -122,3 +122,15 @@ test('Spotify transfers inactive computer before issuing play',async t=>{
   const {s,commands}=recovery(t,{devices:[{...desktop,active:false}],succeeds:true});await s.playWithRecovery({uris:[uri]});
   assert.deepEqual(commands.map(c=>c.action),['transfer','play']);
 });
+
+test('Spotify pause follows the actual playing device and verifies completion',async t=>{
+  const {s,commands}=recovery(t);let n=0;s.playback=async()=>({device:{id:'new-pc'},playing:n++===0,track:{uri}});
+  const p=await s.control({action:'pause',deviceId:'old-pc'});assert.equal(commands[0].deviceId,'new-pc');assert.equal(p.playing,false);
+});
+test('Spotify pause rejects a silent failure instead of claiming paused',async t=>{
+  const {s}=recovery(t,{succeeds:true});await assert.rejects(s.control({action:'pause'}),/не подтвердил паузу/);
+});
+test('Spotify SDK token requires renewed streaming consent and is never in status',async t=>{
+  const {s}=service(t,async()=>{throw new Error('Unexpected network');});s.persist({accessToken:'test-access',refreshToken:'refresh',expires:Date.now()+3600000},s.epoch);
+  await assert.rejects(s.streamToken(),/заново/);s.session.scopes=['streaming'];assert.equal(await s.streamToken(),'test-access');assert.equal(JSON.stringify(s.status()).includes('test-access'),false);
+});

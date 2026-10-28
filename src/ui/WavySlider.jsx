@@ -6,14 +6,14 @@ import { clamp, fmtTime } from '../lib/util';
  * на паузе волна плавно «выпрямляется». Рисуем в canvas, перематывается мышью и стрелками.
  */
 export function WavySlider({
-  getPosition, duration, playing, onSeek, height = 36, amp = 3.4, wavelength = 26, stroke = 5, thumbH = 28, className, label = 'Перемотка',
+  getPosition, duration, playing, onSeek, height = 36, amp = 3.4, wavelength = 26, stroke = 5, thumbH = 28, className, disabled = false, label = 'Перемотка',
 }) {
   const wrap = useRef(null);
   const canvas = useRef(null);
   const probe = useRef(null);
   const st = useRef({ amp: 0, phase: 0, drag: null, press: 0, w: 0, last: 0 });
   const props = useRef({});
-  props.current = { getPosition, duration, playing, onSeek, amp, wavelength, stroke, thumbH, height };
+  props.current = { getPosition, duration, playing, onSeek, amp, wavelength, stroke, thumbH, height, disabled };
   const [, force] = useState(0);
 
   useEffect(() => {
@@ -34,6 +34,7 @@ export function WavySlider({
     resize();
 
     const frame = (ts) => {
+      if(!probe.current || !cv.isConnected)return;
       const s = st.current; const p = props.current;
       const dt = Math.min(0.05, (ts - (s.last || ts)) / 1000);
       s.last = ts;
@@ -100,7 +101,7 @@ export function WavySlider({
     return clamp((e.clientX - r.left - pad) / Math.max(1, r.width - pad * 2), 0, 1);
   };
   const down = (e) => {
-    if (e.button !== 0 || !props.current.duration) return;
+    if (props.current.disabled || e.button !== 0 || !props.current.duration) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     st.current.drag = fracOf(e);
     force((n) => n + 1);
@@ -114,7 +115,7 @@ export function WavySlider({
     force((n) => n + 1);
   };
   const key = (e) => {
-    if (!duration) return;
+    if (disabled || !duration) return;
     let target;
     if (e.key === 'ArrowRight' || e.key === 'ArrowUp') target = getPosition() + 5;
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') target = getPosition() - 5;
@@ -128,7 +129,7 @@ export function WavySlider({
   return (
     <div ref={wrap} className={`wavy ${className || ''}`} style={{ height }} role="slider" tabIndex={0} aria-label={label}
       aria-valuemin={0} aria-valuemax={Math.round(duration || 0)} aria-valuenow={Math.round(getPosition())}
-      aria-valuetext={`${fmtTime(getPosition())} из ${fmtTime(duration || 0)}`} aria-disabled={!duration}
+      aria-valuetext={`${fmtTime(getPosition())} из ${fmtTime(duration || 0)}`} aria-disabled={disabled || !duration}
       onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => { st.current.drag = null; force((n) => n + 1); }} onKeyDown={key}>
       <canvas ref={canvas} style={{ width: '100%', height }} />
       <i ref={probe} className="wavy-probe" />

@@ -55,7 +55,7 @@ function useGlobalKeys() {
       if (remote.active && remote.playback?.track) {
         if (k === ' ' && !e.target.closest('button, [role="button"], input')) { e.preventDefault(); spotifyCommand(remote.playback.playing ? 'pause' : 'play'); return; }
         if (e.ctrlKey && ['ArrowLeft','ArrowRight'].includes(k)) { e.preventDefault(); spotifyCommand(k === 'ArrowRight' ? 'next' : 'previous'); return; }
-        if (!e.ctrlKey && !e.altKey && ['ArrowLeft','ArrowRight'].includes(k) && !e.target.closest('input, .slider')) { e.preventDefault(); spotifyCommand('seek', { value: spotifyPosition() + (k === 'ArrowRight' ? 5000 : -5000) }); return; }
+        if (!e.ctrlKey && !e.altKey && ['ArrowLeft','ArrowRight'].includes(k) && !e.target.closest('input, .slider, .wavy')) { e.preventDefault(); spotifyCommand('seek', { value: spotifyPosition() + (k === 'ArrowRight' ? 5000 : -5000) }); return; }
         if (['ArrowUp','ArrowDown'].includes(k) || ['KeyM','KeyL','KeyQ'].includes(e.code)) return;
       }
       if (k === 'Backspace' || (e.altKey && k === 'ArrowLeft')) { import('./state/nav').then((n) => n.back()); return; }
@@ -124,7 +124,7 @@ export function App() {
   useEffect(() => { if (sc.current) sc.current.scrollTop = 0; }, [tick]);
 
   return (
-    <div className="app" data-compact={!rail} data-playing={!!cur || remote}>
+    <div className="app" data-compact={!rail} data-playing={!!cur || remote} data-spotify={remote}>
       <TitleBar />
       {rail && <Rail />}
       <main className="stage">

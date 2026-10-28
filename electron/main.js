@@ -83,6 +83,8 @@ async function openFiles(files) {
 /* ───────────────────────── запуск ───────────────────────── */
 
 async function boot() {
+  const { components } = require('electron');
+  if(components)components.whenReady().catch(error=>console.error('Widevine initialization:',error.message));
   const userData = app.getPath('userData');
   store = new Store(path.join(userData, 'data'));
   covers = new CoverStore(path.join(userData, 'covers'), nativeImage);

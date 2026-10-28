@@ -1,7 +1,7 @@
 {
   "name": "pixelplayer",
   "productName": "Pixel Player",
-  "version": "1.5.1",
+  "version": "2.0.0-beta.1",
   "description": "Музыкальный плеер для Windows в стиле Material 3 Expressive: автопоиск музыки, динамические цвета из обложек, тексты песен, анимации",
   "author": "Pixel Player",
   "license": "MIT",
@@ -12,16 +12,17 @@
     "start": "node scripts/build.mjs && electron .",
     "watch": "node scripts/build.mjs --watch",
     "dist": "npm run dist:portable",
-    "dist:portable": "node scripts/build.mjs && electron-builder --win portable --x64",
+    "dist:portable": "npm run prepare:runtime && node scripts/build.mjs && electron-builder --win portable --x64",
     "dist:installer": "node scripts/build.mjs && electron-builder --win nsis --x64",
     "dist:dir": "node scripts/build.mjs && electron-builder --win dir",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "prepare:runtime": "node node_modules/electron/install.js"
   },
   "dependencies": {
     "music-metadata": "^11.0.0"
   },
   "devDependencies": {
-    "electron": "^38.0.0",
+    "electron": "github:castlabs/electron-releases#v42.11.18+wvcus",
     "electron-builder": "^26.0.0",
     "esbuild": "^0.25.0",
     "react": "^19.0.0",
@@ -46,12 +47,30 @@
     "win": {
       "icon": "build/icon.ico",
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "fileAssociations": [
         {
-          "ext": ["mp3", "flac", "m4a", "aac", "ogg", "opus", "wav"],
+          "ext": [
+            "mp3",
+            "flac",
+            "m4a",
+            "aac",
+            "ogg",
+            "opus",
+            "wav"
+          ],
           "name": "Аудиофайл",
           "role": "Viewer"
         }
@@ -68,6 +87,8 @@
     "portable": {
       "artifactName": "PixelPlayer-portable-${version}-x64.exe",
       "requestExecutionLevel": "user"
-    }
+    },
+    "electronDist": "node_modules/electron/dist",
+    "afterPack": "scripts/sign-widevine.cjs"
   }
 }

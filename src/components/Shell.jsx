@@ -14,10 +14,10 @@ import { api } from '../api';
 import { spotify } from '../state/spotify';
 
 export const NAV = [
-  { id: 'home', label: 'Главная', icon: 'home', route: { name: 'home' } },
+  { id: 'spotify', label: 'Spotify', icon: 'graphic_eq', route: { name: 'spotify' } },
   { id: 'search', label: 'Поиск', icon: 'search', route: { name: 'search' } },
-  { id: 'library', label: 'Библиотека', icon: 'library_music', route: { name: 'library' } },
-  { id: 'online', label: 'Онлайн', icon: 'graphic_eq', route: { name: 'online' } },
+  { id: 'library', label: 'Локальные', icon: 'library_music', route: { name: 'library' } },
+  { id: 'online', label: 'Сервисы', icon: 'graphic_eq', route: { name: 'online' } },
   { id: 'assistant', label: 'Агент', icon: 'auto_awesome', route: { name: 'assistant' } },
 ];
 

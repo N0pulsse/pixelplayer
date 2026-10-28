@@ -6,7 +6,7 @@ const crypto = require('node:crypto');
 const { EventEmitter } = require('node:events');
 const API = 'https://api.spotify.com/v1';
 const REDIRECT = 'http://127.0.0.1:43827/callback';
-const SCOPES = ['playlist-read-private', 'playlist-read-collaborative', 'user-library-read', 'user-read-playback-state', 'user-read-currently-playing', 'user-modify-playback-state'];
+const SCOPES = ['streaming', 'user-read-email', 'user-read-private', 'playlist-read-private', 'playlist-read-collaborative', 'user-library-read', 'user-read-playback-state', 'user-read-currently-playing', 'user-modify-playback-state'];
 const id = (value) => typeof value === 'string' && /^[A-Za-z0-9]{22}$/.test(value);
 const clean = (value, max = 300) => String(value || '').slice(0, max);
 function playbackTarget(input = {}) {
@@ -99,7 +99,7 @@ class Spotify extends EventEmitter {
   }
   fromTokens(data, previous) {
     if (!data.access_token || !(data.refresh_token || previous?.refreshToken)) throw new Error('Spotify вернул неполный ответ.');
-    return { accessToken: data.access_token, refreshToken: data.refresh_token || previous.refreshToken, expires: Date.now() + Math.max(1, Number(data.expires_in) || 3600) * 1000 };
+    return { accessToken: data.access_token, refreshToken: data.refresh_token || previous.refreshToken, scopes: data.scope ? data.scope.split(/\s+/) : previous?.scopes || [], expires: Date.now() + Math.max(1, Number(data.expires_in) || 3600) * 1000 };
   }
   async tokenRequest(params) {
     let res;
@@ -194,6 +194,28 @@ class Spotify extends EventEmitter {
       let p=null;try{p=await confirm(6,null);}catch{unchanged();}
       return{playback:p,deviceId:p?.device?.id||null,recovered:true,opened:true};
     }finally{this.playingRequest=false;}
+  }
+  async streamToken(){
+    if(!this.session?.scopes?.includes('streaming'))throw new Error('Войдите в Spotify заново, чтобы разрешить встроенное воспроизведение.');
+    return this.access();
+  }
+  async control(input = {}) {
+    if(input.action==='transfer')return this.command(input);
+    if(input.action==='play')throw new Error('Используйте команду запуска Spotify.');
+    const epoch=this.epoch;
+    const current=await this.playback();
+    if(epoch!==this.epoch)throw new Error('Подключение Spotify изменено.');
+    const deviceId=current?.device?.id || input.deviceId;
+    await this.command({...input,deviceId});
+    if(input.action!=='pause')return null;
+    for(let i=0;i<4;i++){
+      await this.wait(400);
+      if(epoch!==this.epoch)throw new Error('Подключение Spotify изменено.');
+      const p=await this.playback();
+      if(epoch!==this.epoch)throw new Error('Подключение Spotify изменено.');
+      if(!p?.playing)return p || (current?{...current,playing:false,at:Date.now()}:null);
+    }
+    throw new Error('Spotify не подтвердил паузу. Обновите состояние и повторите.');
   }
   async command(input = {}) {
     const device = input.deviceId ? String(input.deviceId) : '';
