@@ -22,6 +22,7 @@ const stub = {
   playlists: { import: async () => null, export: async () => null },
   lyrics: { get: async () => null },
   artistImage: async () => null,
+  genres:{prioritize:async()=>{},onResult:()=>noop,status:async()=>({}),scan:async()=>({}),onStatus:()=>noop},
   artistProfile: async () => null,
   ai: { config: async () => ({}), save: async () => ({}), generate: async () => { throw new Error('Запустите настольную версию плеера'); } },
   wallpaper: { get: async () => ({ color: null, source: 'Требуется Windows' }), pick: async () => null },

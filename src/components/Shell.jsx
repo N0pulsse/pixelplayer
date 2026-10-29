@@ -52,7 +52,7 @@ export function TitleBar() {
       {showBack && (
         <IconButton icon="arrow_back" size="s" label="Назад" className="nodrag tb-back" onClick={back} />
       )}
-      <span className="tb-brand" aria-hidden="true"><Icon name="graphic_eq" size={18} /></span>
+      <span className="tb-brand" aria-hidden="true"><img src="app-icon.png" width="22" height="22" alt="" /></span>
       <span className="tb-title t-label-l">Pixel Player</span>
       <span className="tb-context t-body-s">{NAV.find((n) => n.id === rootOf(route))?.label || (rootOf(route) === 'settings' ? 'Настройки' : 'Ваша музыка')}</span>
     </div>

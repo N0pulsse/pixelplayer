@@ -97,6 +97,14 @@ class Library extends EventEmitter {
     return this._savePromise;
   }
 
+  applyGenre(id,fingerprint,result,identify){
+    const t=this.cache.get(id)||this.adhoc.get(id);
+    if(!t||t.genre||identify(t)!==fingerprint)return false;
+    const next={...t,genre:result.genre,genreSource:result.source,genreUrl:result.url};
+    if(this.cache.has(id))this.cache.set(id,next);if(this.adhoc.has(id))this.adhoc.set(id,next);
+    if(this.visible.has(id)||this.externalIds.has(id))this.emit('diff',{added:[],updated:[Library.pub(next)],removed:[]});
+    this._saveSoon();return true;
+  }
   /* ───────────── состояние ───────────── */
 
   static pub(t) {

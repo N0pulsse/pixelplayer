@@ -55,6 +55,7 @@ function cancelPendingError() { clearTimeout(errorTimer); errorTimer = null; }
 
 async function startCurrent({ autoplay = true, startAt = 0 } = {}) {
   const t = currentTrack();
+  if(t&&!t.genre)api.genres?.prioritize?.(t.id)?.catch(()=>{});
   if (!t) return;
   const version = ++playVersion;
   cancelPendingError();

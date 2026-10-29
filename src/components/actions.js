@@ -11,6 +11,7 @@ import { fmtTime } from '../lib/util';
 export function showTrackDetails(track) {
   const values = [
     ['Название', track.title], ['Исполнитель', track.artist], ['Альбом', track.album], ['Год', track.year], ['Жанр', track.genre],
+    ['Источник жанра', track.genreSource],
     ['Длительность', fmtTime(track.duration)], ['Формат', [track.codec, track.lossless ? 'Lossless' : null].filter(Boolean).join(' · ')],
     ['Битрейт', track.bitrate ? `${track.bitrate} кбит/с` : null], ['Частота', track.sampleRate ? `${(track.sampleRate / 1000).toFixed(1)} кГц` : null], ['Файл', track.path],
   ].filter(([, value]) => value);

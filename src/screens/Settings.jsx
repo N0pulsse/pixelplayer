@@ -14,6 +14,11 @@ import { cx, count, songsWord } from '../lib/util';
 import { ThemeGallery } from '../components/ThemeGallery';
 import { AgentConfig } from './Assistant';
 
+function GenreSearch(){
+  const enabled=useStore(settings,s=>s.onlineGenres);const [status,setStatus]=useState({});
+  useEffect(()=>{api.genres.status().then(setStatus).catch(()=>{});return api.genres.onStatus(setStatus);},[]);
+  return <Row icon="search" title="Жанры библиотеки" sub={status.running?`Поиск в фоне · осталось: ${status.queued||0} · найдено: ${status.updated||0}`:`Найдено за сеанс: ${status.updated||0}. Жанры из тегов сохраняются`}><Button variant="tonal" disabled={!enabled||status.running} onClick={()=>api.genres.scan().then(setStatus).catch(()=>toast('Не удалось запустить поиск жанров'))}>Найти недостающие</Button></Row>;
+}
 function Group({ title, children }) {
   return (<section className="sgroup"><h2 className="t-label-l sgroup-title">{title}</h2><div className="sgroup-body">{children}</div></section>);
 }
@@ -137,6 +142,8 @@ export function Settings() {
       </Group>
 
       <Group title="Интернет">
+        <Toggle icon="music_note" title="Определять жанры из интернета" sub="Apple Music / iTunes и MusicBrainz: отправляются название, исполнитель и длительность. Только для треков без жанра; файлы не изменяются" k="onlineGenres" />
+        <GenreSearch />
         <Toggle icon="lyrics" title="Искать тексты песен онлайн" sub="LRCLIB: отправляется название, исполнитель и длительность трека. Тексты из .lrc-файлов и тегов используются в первую очередь" k="onlineLyrics" />
         <Toggle icon="person" title="Профили исполнителей из интернета" sub="TheAudioDB / Deezer: фото, шапки, биографии и дискографии. Отправляется имя артиста; найденное сохраняется для офлайн-просмотра" k="artistImages" />
       </Group>

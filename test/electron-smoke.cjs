@@ -15,7 +15,7 @@ process.env.PORTABLE_EXECUTABLE_DIR = qa;
 const data = path.join(qa, 'PixelPlayer-data', 'data');
 fs.mkdirSync(data, { recursive: true });
 fs.writeFileSync(path.join(data, 'folders.json'), JSON.stringify([{ path: path.join(__dirname, 'media'), enabled: true }]));
-fs.writeFileSync(path.join(data, 'settings.json'), JSON.stringify({ minDuration: 0, onlineLyrics: false, artistImages: false, reduceMotion: true, themeMode: 'dark', variant: 'expressive', volume: 0 }));
+fs.writeFileSync(path.join(data, 'settings.json'), JSON.stringify({ minDuration: 0, onlineGenres:false, onlineLyrics: false, artistImages: false, reduceMotion: true, themeMode: 'dark', variant: 'expressive', volume: 0 }));
 fs.writeFileSync(path.join(data, 'session.json'), 'null');
 fs.writeFileSync(path.join(data, 'user.json'), '{}');
 fs.writeFileSync(path.join(data, 'window.json'), JSON.stringify({ width: 1280, height: 820 }));

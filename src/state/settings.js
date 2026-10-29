@@ -37,6 +37,7 @@ export const DEFAULTS = {
   minDuration: 15,
   closeToTray: false,
   onlineLyrics: true,
+  onlineGenres: true,
   artistImages: true,
 };
 
