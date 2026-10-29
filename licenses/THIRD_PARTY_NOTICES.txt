@@ -124,7 +124,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 
-===== electron 42.11.18 (MIT) =====
+===== electron 38.8.6 (MIT) =====
 
 Copyright (c) Electron contributors
 Copyright (c) 2013-2020 GitHub Inc.
