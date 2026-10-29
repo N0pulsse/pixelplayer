@@ -11,13 +11,11 @@ import { WavySlider } from '../ui/WavySlider';
 import { toggleFavorite, user } from '../state/userdata';
 import { cx, fmtTime } from '../lib/util';
 import { api } from '../api';
-import { spotify } from '../state/spotify';
 
 export const NAV = [
-  { id: 'spotify', label: 'Spotify', icon: 'graphic_eq', route: { name: 'spotify' } },
+  { id: 'home', label: 'Главная', icon: 'home', route: { name: 'home' } },
   { id: 'search', label: 'Поиск', icon: 'search', route: { name: 'search' } },
-  { id: 'library', label: 'Локальные', icon: 'library_music', route: { name: 'library' } },
-  { id: 'online', label: 'Сервисы', icon: 'graphic_eq', route: { name: 'online' } },
+  { id: 'library', label: 'Библиотека', icon: 'library_music', route: { name: 'library' } },
   { id: 'assistant', label: 'Агент', icon: 'auto_awesome', route: { name: 'assistant' } },
 ];
 
@@ -105,7 +103,6 @@ export function BottomNav() {
 }
 
 export function MiniPlayer() {
-  const remote = useStore(spotify, (s) => s.active && !!s.playback?.track);
   const track = useCurrent();
   const playing = usePlayer((s) => s.playing);
   const duration = usePlayer((s) => s.duration);
@@ -116,7 +113,7 @@ export function MiniPlayer() {
   const ref = useRef(null);
   const wide = vw >= 1040;
   const pos = usePosition(500);
-  if (!track || remote) return null;
+  if (!track) return null;
   const open = () => openNowPlaying(ref.current.getBoundingClientRect());
 
   return (

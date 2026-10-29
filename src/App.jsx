@@ -11,9 +11,6 @@ import { Library } from './screens/Library';
 import { Search } from './screens/Search';
 import { Settings } from './screens/Settings';
 import { Assistant } from './screens/Assistant';
-import { SpotifyScreen, SpotifyMini } from './screens/Spotify';
-import { Online } from './screens/Online';
-import { spotify, spotifyCommand, spotifyPosition } from './state/spotify';
 import { NowPlaying } from './screens/NowPlaying';
 import { AlbumScreen, ArtistScreen, GenreScreen, FolderScreen, FavoritesScreen, HistoryScreen, PlaylistScreen } from './screens/Detail';
 import { api } from './api';
@@ -28,8 +25,6 @@ function renderRoute(r) {
     case 'search': return <Search />;
     case 'settings': return <Settings />;
     case 'assistant': return <Assistant />;
-    case 'spotify': return <SpotifyScreen />;
-    case 'online': return <Online />;
     case 'album': return <AlbumScreen id={r.id} />;
     case 'artist': return <ArtistScreen id={r.id} />;
     case 'genre': return <GenreScreen id={r.id} />;
@@ -51,13 +46,6 @@ function useGlobalKeys() {
       if (e.ctrlKey && e.code === 'KeyF') { e.preventDefault(); closeNowPlaying(); go({ name: 'search' }); return; }
       if (typing) return;
       if (ui.get().dialog || ui.get().menu) return;
-      const remote = spotify.get();
-      if (remote.active && remote.playback?.track) {
-        if (k === ' ' && !e.target.closest('button, [role="button"], input')) { e.preventDefault(); spotifyCommand(remote.playback.playing ? 'pause' : 'play'); return; }
-        if (e.ctrlKey && ['ArrowLeft','ArrowRight'].includes(k)) { e.preventDefault(); spotifyCommand(k === 'ArrowRight' ? 'next' : 'previous'); return; }
-        if (!e.ctrlKey && !e.altKey && ['ArrowLeft','ArrowRight'].includes(k) && !e.target.closest('input, .slider, .wavy')) { e.preventDefault(); spotifyCommand('seek', { value: spotifyPosition() + (k === 'ArrowRight' ? 5000 : -5000) }); return; }
-        if (['ArrowUp','ArrowDown'].includes(k) || ['KeyM','KeyL','KeyQ'].includes(e.code)) return;
-      }
       if (k === 'Backspace' || (e.altKey && k === 'ArrowLeft')) { import('./state/nav').then((n) => n.back()); return; }
       if (k === ' ' && !e.target.closest('button, [role="button"], .slider, .wavy')) { e.preventDefault(); toggle(); return; }
       if (e.ctrlKey && k === 'ArrowRight') { e.preventDefault(); next(); return; }
@@ -117,14 +105,13 @@ export function App() {
   const dropping = useStore(ui, (s) => s.dropping);
   const rail = useStore(ui, (s) => s.vw >= 840);
   const cur = useCurrent();
-  const remote = useStore(spotify, (s) => s.active && !!s.playback?.track);
   const sc = useRef(null);
   useGlobalKeys();
   useDrop();
   useEffect(() => { if (sc.current) sc.current.scrollTop = 0; }, [tick]);
 
   return (
-    <div className="app" data-compact={!rail} data-playing={!!cur || remote} data-spotify={remote}>
+    <div className="app" data-compact={!rail} data-playing={!!cur}>
       <TitleBar />
       {rail && <Rail />}
       <main className="stage">
@@ -133,9 +120,8 @@ export function App() {
         </div>
       </main>
       <MiniPlayer />
-      <SpotifyMini />
       {!rail && <BottomNav />}
-      {!remote && <NowPlaying />}
+      <NowPlaying />
       <Hosts />
       {dropping && (
         <div className="drop"><div className="drop-card"><Icon name="library_music" size={56} /><h2 className="t-headline-m">Отпустите, чтобы добавить</h2><p className="t-body-l">Папки попадут в библиотеку, файлы начнут играть сразу</p></div></div>

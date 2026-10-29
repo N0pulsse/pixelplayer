@@ -42,7 +42,6 @@ const opts = { ...common, entryPoints: entries };
 async function copyStatic() {
   let html = await readFile(path.join(root, 'src', 'index.html'), 'utf8');
   await writeFile(path.join(out, 'index.html'), html);
-  await cp(path.join(root, 'src', 'stream'), path.join(out, 'stream'), { recursive: true });
   await cp(path.join(root, 'licenses'), path.join(out, 'licenses'), { recursive: true });
 }
 

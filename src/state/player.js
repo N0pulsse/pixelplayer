@@ -6,7 +6,6 @@ import { recordPlay } from './userdata';
 import { getIndex, adhoc, libStore } from './library';
 import { toast } from './ui';
 import { api } from '../api';
-import { remoteTransport } from './transport';
 
 export const engine = new Engine();
 const audioSettings = settings.get();
@@ -378,7 +377,6 @@ function updateMediaSession(t) {
   } catch { /* Media metadata is optional. */ }
 }
 function syncPositionState() {
-  if (remoteTransport.active()) return;
   if (!('mediaSession' in navigator)) return;
   try {
     const duration = engine.duration();
@@ -387,13 +385,13 @@ function syncPositionState() {
   } catch { /* Some media backends do not implement position state. */ }
 }
 if ('mediaSession' in navigator) {
-  const set = (a, f) => { try { navigator.mediaSession.setActionHandler(a, (data) => { if (!remoteTransport.handle(a, data)) f(data); }); } catch { /* Optional action. */ } };
+  const set = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch { /* Optional action. */ } };
   set('play', play); set('pause', pause); set('previoustrack', prev); set('nexttrack', next);
   set('seekbackward', (d) => seekBy(-(d.seekOffset || 10)));
   set('seekforward', (d) => seekBy(d.seekOffset || 10));
   set('seekto', (d) => seek(d.seekTime || 0)); set('stop', pause);
 }
-api.onCommand((c) => { if (remoteTransport.handle(c)) return; if (c === 'playpause') toggle(); else if (c === 'next') next(); else if (c === 'prev') prev(); });
+api.onCommand((c) => { if (c === 'playpause') toggle(); else if (c === 'next') next(); else if (c === 'prev') prev(); });
 api.onOpenFiles((tracks) => {
   if (!tracks?.length) return;
   for (const t of tracks) adhoc.set(t.id, t);

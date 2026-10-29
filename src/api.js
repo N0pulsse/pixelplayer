@@ -4,7 +4,6 @@
  */
 const noop = () => {};
 const stub = {
-  online: { status:async()=>[],list:async()=>[],save:async()=>{throw new Error('Запустите настольную версию');},remove:async()=>[],open:async()=>{throw new Error('Запустите настольную версию');},external:async()=>{},close:async()=>[],disconnect:async()=>[],onStatus:()=>noop },
   platform: 'web',
   info: { version: 'web', userData: '' },
   url: { audio: (id) => `/audio/${id}`, cover: (key) => `/cover/${key}` },
@@ -26,7 +25,6 @@ const stub = {
   artistProfile: async () => null,
   ai: { config: async () => ({}), save: async () => ({}), generate: async () => { throw new Error('Запустите настольную версию плеера'); } },
   wallpaper: { get: async () => ({ color: null, source: 'Требуется Windows' }), pick: async () => null },
-  spotify: { status: async () => ({}), client: async () => ({}), start: async () => { throw new Error('Запустите настольную версию плеера'); }, cancel: async () => ({}), disconnect: async () => ({}), browse: async () => ({ items: [] }), devices: async () => [], playback: async () => null, streamToken: async () => { throw new Error("Нужна настольная версия"); }, play: async () => { throw new Error("Запустите настольную версию плеера"); }, command: async () => {}, control: async () => null, onStatus: () => noop },
   win: { minimize: noop, toggleMaximize: noop, close: noop, setOverlay: noop, setAlwaysOnTop: noop, setTitle: noop, isMaximized: async () => false, onMaximize: () => noop },
   shell: { showInFolder: noop, openExternal: noop, openUserData: noop },
   quit: noop,

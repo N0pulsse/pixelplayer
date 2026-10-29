@@ -90,10 +90,6 @@ function createHandler({ appDir, library, covers, artistDir }) {
       if (m) { kind = m[1]; key = m[2]; }
     }
 
-    if (kind === 'stream') {
-      if(!['player.html','player.js'].includes(key))return new Response('Not found',{status:404});
-      return serveFile(path.join(rootApp,'stream',key),request,STATIC_MIME[path.extname(key)]);
-    }
     if (kind === 'app') {
       const rel = key || 'index.html';
       const file = path.resolve(rootApp, rel);

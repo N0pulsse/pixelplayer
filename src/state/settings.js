@@ -25,7 +25,6 @@ export const DEFAULTS = {
   wallpaperEnginePath: '',
   lyricsOffsets: {},
 
-  spotifyPlaybackMode: 'embedded',
   crossfade: 0,
   resume: true,
   volume: 0.8,

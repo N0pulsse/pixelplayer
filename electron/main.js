@@ -1,6 +1,6 @@
 'use strict';
 const {
-  app, BrowserWindow, ipcMain, dialog, protocol, shell, nativeImage, net, Tray, Menu, safeStorage, session,
+  app, BrowserWindow, ipcMain, dialog, protocol, shell, nativeImage, net, Tray, Menu, safeStorage,
 } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -83,8 +83,6 @@ async function openFiles(files) {
 /* ───────────────────────── запуск ───────────────────────── */
 
 async function boot() {
-  const { components } = require('electron');
-  if(components)components.whenReady().catch(error=>console.error('Widevine initialization:',error.message));
   const userData = app.getPath('userData');
   store = new Store(path.join(userData, 'data'));
   covers = new CoverStore(path.join(userData, 'covers'), nativeImage);
@@ -272,7 +270,7 @@ function createTray() {
 /* ───────────────────────── IPC ───────────────────────── */
 
 function registerIpc(firstRun) {
-  registerFeatures({ app, ipcMain, dialog, getWindow: () => win, store, library, net, nativeImage, safeStorage, shell, BrowserWindow, session });
+  registerFeatures({ app, ipcMain, dialog, getWindow: () => win, store, library, net, nativeImage, safeStorage });
   // Библиотека
   ipcMain.handle('lib:get', () => ({
     tracks: library.getTracks(),
